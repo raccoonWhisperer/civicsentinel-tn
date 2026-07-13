@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Civic Sentinel — Rutherford County, Tennessee</title>
+<meta name="description" content="Civic Sentinel — an independent, public record of community issues in Rutherford County, Tennessee. See it. Log it. Track it to resolution." />
+
+<!-- Typography: institutional serif display + federal-grade sans (Public Sans) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Leaflet (map) — vendored locally, no CDN dependency -->
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+<script src="vendor/leaflet/leaflet.js" defer></script>
+
+<style>
+/* =====================================================================
+   CIVIC SENTINEL — institutional design system
+   Modeled on CoreCivic's corporate polish: deep navy authority, a teal
+   action accent, warm off-white ground, editorial serif display over a
+   federal-grade sans, generous whitespace, restrained credibility signals.
+   Status semantics: amber = open, blue = in progress, green = resolved.
+   WCAG 2.1 AA contrast, full keyboard nav, reduced-motion support.
+   ===================================================================== */
+:root{
+  --navy:#12314e;        /* primary institutional color */
+  --navy-800:#0d2438;
+  --navy-900:#081a2b;
+  --navy-050:#eaf0f6;
+  --teal:#0e7c7b;        /* action accent (CTAs, links-of-action) */
+  --teal-700:#0a5f5e;
+  --teal-050:#e4f1f0;
+  --gold:#b0842f;        /* rare warm accent for eyebrows */
+  --ink:#1b2a38;
+  --ink-soft:#54637a;
+  --cream:#f7f4ee;       /* warm off-white section ground */
+  --paper:#ffffff;
+  --line:#e4e2da;        /* warm hairline */
+  --line-cool:#dfe5ec;
+  /* status */
+  --amber:#a86a10; --amber-bg:#fbf1df;
+  --blue:#245ea0;  --blue-bg:#e6eefa;
+  --green:#1c7146; --green-bg:#e4f3ea;
+  --grey:#5b6675;  --grey-bg:#eceff3;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow-sm:0 1px 2px rgba(9,26,43,.05);
+  --shadow:0 2px 6px rgba(9,26,43,.06),0 14px 40px rgba(9,26,43,.07);
+  --shadow-lg:0 30px 80px rgba(9,26,43,.16);
+  --maxw:1200px;
+  --serif:'Spectral',Georgia,'Times New Roman',serif;
+  --sans:'Public Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.62;font-size:17px;font-weight:400;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{font-family:var(--serif);color:var(--navy);line-height:1.16;margin:0 0 .5em;font-weight:600;letter-spacing:-.01em}
+h1{font-weight:700}
+h2{font-size:clamp(1.9rem,3.4vw,2.7rem)}
+h3{font-size:1.32rem}
+p{margin:0 0 1em}
+a{color:var(--teal-700);text-decoration:none}
+a:hover{text-decoration:underline}
+strong{font-weight:700}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+.section{padding:88px 0}
+.section--cream{background:var(--cream)}
+.section--navy{background:var(--navy);color:#dfe8f1}
+.section--navy h2,.section--navy h3{color:#fff}
+.eyebrow{font-family:var(--sans);text-transform:uppercase;letter-spacing:.18em;font-size:.76rem;font-weight:700;color:var(--teal);margin-bottom:1em}
+.section--navy .eyebrow{color:#5fc9c5}
+.lead{font-size:1.18rem;color:var(--ink-soft);max-width:64ch;line-height:1.55}
+.section--navy .lead{color:#c4d2e0}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px;border-radius:3px}
+.skip{position:absolute;left:-999px;top:0;background:var(--navy);color:#fff;padding:10px 16px;z-index:3000}
+.skip:focus{left:10px;top:10px}
+.rule{width:54px;height:3px;background:var(--teal);margin:0 0 22px;border-radius:2px}
+
+/* ---- Buttons ---- */
+.btn{display:inline-flex;align-items:center;gap:.5em;font-family:var(--sans);font-weight:600;font-size:1rem;padding:13px 26px;border-radius:8px;border:2px solid transparent;cursor:pointer;transition:transform .09s ease,background .16s ease,box-shadow .16s ease;text-decoration:none;letter-spacing:.01em}
+.btn:hover{text-decoration:none;transform:translateY(-1px)}
+.btn--primary{background:var(--teal);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.28)}
+.btn--primary:hover{background:var(--teal-700)}
+.btn--dark{background:var(--navy);color:#fff}
+.btn--dark:hover{background:var(--navy-800)}
+.btn--ghost{background:transparent;color:var(--navy);border-color:#c9d2dc}
+.btn--ghost:hover{background:var(--navy-050);border-color:var(--navy)}
+.btn--sm{padding:9px 16px;font-size:.9rem;border-radius:7px}
+.btn--block{width:100%;justify-content:center}
+
+/* ---- Utility bar ---- */
+.utility{background:var(--navy-900);color:#aeb9c7;font-size:.82rem;letter-spacing:.01em}
+.utility .wrap{display:flex;align-items:center;gap:22px;min-height:40px;flex-wrap:wrap}
+.utility .u-left{margin-right:auto;color:#8595a8;font-weight:500}
+.utility a{color:#c2ccd9}
+.utility a:hover{color:#fff}
+.langtoggle{display:inline-flex;border:1px solid #2b4055;border-radius:999px;overflow:hidden}
+.langtoggle button{background:transparent;color:#c2ccd9;border:0;padding:5px 13px;font:inherit;font-weight:600;font-size:.78rem;cursor:pointer;letter-spacing:.04em}
+.langtoggle button[aria-pressed="true"]{background:#fff;color:var(--navy)}
+
+/* ---- Header / nav ---- */
+header.site{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.97);backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line-cool)}
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:22px;min-height:76px}
+.brand{display:flex;align-items:center;gap:13px;color:var(--navy)}
+.brand:hover{text-decoration:none}
+.brand .mark{width:40px;height:40px;flex:0 0 auto}
+.brand .bt{font-family:var(--serif);font-weight:700;font-size:1.3rem;letter-spacing:-.02em;line-height:1.05}
+.brand small{display:block;font-family:var(--sans);font-weight:600;font-size:.62rem;color:var(--ink-soft);letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;margin:0;padding:0}
+.nav-links a{padding:10px 13px;border-radius:7px;font-weight:600;font-size:.96rem;color:var(--ink);white-space:nowrap}
+.nav-links a:hover{background:var(--navy-050);color:var(--navy);text-decoration:none}
+.nav-cta{display:flex;gap:10px;align-items:center}
+.menu-btn{display:none;background:none;border:1px solid var(--line-cool);border-radius:8px;padding:9px 11px;cursor:pointer;font-size:1.1rem}
+
+/* ---- Hero ---- */
+.hero{position:relative;overflow:hidden;background:radial-gradient(120% 140% at 15% 0%,#1b466d 0%,#12314e 42%,#0b2135 100%);color:#fff}
+.hero__bg{position:absolute;inset:0;z-index:0;opacity:.9;pointer-events:none}
+.hero__bg svg{width:100%;height:100%}
+.hero__grid{position:absolute;inset:0;z-index:0;background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:64px 64px;mask-image:linear-gradient(to bottom,rgba(0,0,0,.7),transparent 78%)}
+.hero__inner{position:relative;z-index:2;padding:104px 0 92px}
+.hero .eyebrow{color:#7fd6d1}
+.hero h1{color:#fff;font-size:clamp(2.3rem,5.2vw,4rem);max-width:16ch;margin-bottom:.32em;letter-spacing:-.02em}
+.hero__tag{font-size:1.24rem;color:#d3e0ec;max-width:54ch;margin-bottom:1.8em;line-height:1.5}
+.hero__cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero .btn--ghost{background:rgba(255,255,255,.06);color:#fff;border-color:rgba(255,255,255,.55)}
+.hero .btn--ghost:hover{background:rgba(255,255,255,.16)}
+.hero__dots{display:flex;gap:9px;margin-top:40px}
+.hero__dots button{width:38px;height:5px;border-radius:3px;border:0;background:rgba(255,255,255,.28);cursor:pointer;padding:0;transition:background .2s}
+.hero__dots button[aria-pressed="true"]{background:#5fc9c5}
+.hero__stats{position:relative;z-index:2;display:flex;flex-wrap:wrap;gap:44px;border-top:1px solid rgba(255,255,255,.14);padding:26px 0 4px;margin-top:44px}
+.hero__stat .n{font-family:var(--serif);font-size:2rem;font-weight:700;color:#fff;line-height:1}
+.hero__stat .l{font-size:.86rem;color:#a9bccd;margin-top:4px;letter-spacing:.02em}
+.hero__local{position:relative;z-index:2;background:rgba(8,26,43,.55);border-top:1px solid rgba(255,255,255,.12)}
+.hero__local .wrap{display:flex;gap:26px;flex-wrap:wrap;align-items:center;padding:15px 26px;font-size:.92rem;color:#c7d5e4}
+.hero__local strong{color:#fff}
+
+/* ---- Credibility strip ---- */
+.cred{background:var(--paper);border-bottom:1px solid var(--line-cool)}
+.cred .wrap{display:flex;align-items:center;gap:20px 42px;flex-wrap:wrap;padding:26px 26px}
+.cred .clabel{font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;color:var(--ink-soft);margin-right:6px}
+.cred .src{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--navy);font-size:.96rem;letter-spacing:.01em}
+.cred .src svg{opacity:.8}
+.cred .src span{font-weight:400;color:var(--ink-soft);font-size:.82rem}
+
+/* ---- Pillars ---- */
+.sec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:40px;flex-wrap:wrap}
+.sec-head .lead{margin-top:6px}
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:26px}
+.pillar{background:var(--paper);border:1px solid var(--line-cool);border-radius:var(--radius);padding:34px 30px;box-shadow:var(--shadow-sm);transition:transform .12s ease,box-shadow .16s ease;position:relative}
+.pillar:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.pillar .ico{width:56px;height:56px;border-radius:13px;background:var(--teal-050);display:grid;place-items:center;margin-bottom:18px}
+.pillar .step-n{position:absolute;top:28px;right:30px;font-family:var(--serif);font-size:1.1rem;color:var(--line);font-weight:700}
+.pillar h3{margin-bottom:.3em;font-size:1.4rem}
+.pillar p{color:var(--ink-soft);font-size:.98rem}
+.pillar a{font-weight:700;color:var(--teal-700)}
+
+/* ---- Carousel ---- */
+.carousel{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(300px,1fr);gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:12px;scrollbar-width:thin}
+.issue-card{scroll-snap-align:start;background:var(--paper);border:1px solid var(--line-cool);border-radius:var(--radius);box-shadow:var(--shadow-sm);overflow:hidden;cursor:pointer;display:flex;flex-direction:column;text-align:left;font:inherit;padding:0;transition:border-color .15s,box-shadow .15s,transform .12s}
+.issue-card:hover{border-color:var(--teal);box-shadow:var(--shadow);transform:translateY(-3px)}
+.issue-card .cbar{height:5px;background:var(--teal)}
+.issue-card .cat{font-family:var(--sans);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--teal-700);padding:18px 18px 0}
+.issue-card h4{font-family:var(--serif);color:var(--navy);font-size:1.14rem;margin:8px 18px 10px;line-height:1.26}
+.issue-card .loc{font-size:.85rem;color:var(--ink-soft);padding:0 18px 16px;margin-top:auto}
+.issue-card .loc svg{vertical-align:-2px;margin-right:4px}
+
+/* ---- Status badges ---- */
+.badge{display:inline-flex;align-items:center;gap:7px;font-family:var(--sans);font-size:.74rem;font-weight:700;letter-spacing:.02em;padding:5px 11px;border-radius:999px;margin:0 18px 14px;width:fit-content}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%}
+.st-open{background:var(--amber-bg);color:var(--amber)}.st-open::before{background:var(--amber)}
+.st-prog{background:var(--blue-bg);color:var(--blue)}.st-prog::before{background:var(--blue)}
+.st-done{background:var(--green-bg);color:var(--green)}.st-done::before{background:var(--green)}
+.st-closed{background:var(--grey-bg);color:var(--grey)}.st-closed::before{background:var(--grey)}
+
+/* ---- Map ---- */
+.map-shell{display:grid;grid-template-columns:300px 1fr;gap:0;border:1px solid var(--line-cool);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#fff}
+.map-side{padding:24px;background:var(--cream);border-right:1px solid var(--line);max-height:580px;overflow:auto}
+.map-side h3{font-size:1.08rem}
+.layer{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.layer:last-of-type{border-bottom:0}
+.layer input{margin-top:5px;accent-color:var(--teal)}
+.layer .lg{font-size:.81rem;color:var(--ink-soft);display:block}
+.legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:5px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+#leafmap{height:580px;width:100%;background:#e9eef2}
+.map-search{display:flex;gap:8px;margin-bottom:16px}
+.map-search input{flex:1;min-width:0}
+.leaflet-popup-content{font-family:var(--sans);font-size:.9rem}
+.leaflet-popup-content h4{font-family:var(--serif);margin:0 0 4px}
+.hint{font-size:.8rem;color:var(--ink-soft)}
+
+/* ---- Accountability counters ---- */
+.account-head{max-width:64ch}
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:44px}
+.counter{border-left:2px solid rgba(95,201,197,.4);padding-left:22px}
+.counter .num{font-family:var(--serif);font-size:3.1rem;font-weight:700;color:#fff;line-height:1}
+.counter .lbl{color:#b7c6d6;font-size:.94rem;margin-top:8px}
+.counter .sub{color:#7f93a8;font-size:.8rem;margin-top:2px}
+
+/* ---- Forms ---- */
+label{font-weight:600;font-size:.9rem;display:block;margin-bottom:7px;color:var(--ink)}
+input,select,textarea{width:100%;font-family:var(--sans);font-size:1rem;padding:12px 14px;border:1.5px solid var(--line-cool);border-radius:9px;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);outline:3px solid var(--teal-050)}
+textarea{min-height:130px;resize:vertical;line-height:1.5}
+.field{margin-bottom:20px}
+.req{color:#b42318}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.help{font-size:.82rem;color:var(--ink-soft);margin-top:6px}
+
+/* ---- Steps ---- */
+.steps{display:flex;gap:8px;margin-bottom:26px;flex-wrap:wrap}
+.step-pill{font-size:.8rem;font-weight:700;color:var(--ink-soft);background:var(--cream);border:1px solid var(--line);padding:7px 13px;border-radius:999px}
+.step-pill.active{background:var(--teal);color:#fff;border-color:var(--teal)}
+.step-pill.done{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+
+/* ---- Filters ---- */
+.filters{display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-bottom:24px;background:var(--cream);padding:20px;border-radius:var(--radius);border:1px solid var(--line)}
+.filters .field{margin:0;min-width:160px;flex:1}
+.filters label{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+
+/* ---- Issue log ---- */
+.log-list{display:grid;gap:13px}
+.log-row{display:grid;grid-template-columns:126px 1fr auto;gap:18px;align-items:center;background:#fff;border:1px solid var(--line-cool);border-radius:11px;padding:16px 20px;cursor:pointer;text-align:left;font:inherit;width:100%;transition:border-color .14s,box-shadow .14s}
+.log-row:hover{border-color:var(--teal);box-shadow:var(--shadow-sm)}
+.log-row .id{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:.8rem;color:var(--ink-soft);font-weight:600}
+.log-row h4{font-family:var(--serif);margin:0;font-size:1.08rem;line-height:1.25}
+.log-row .meta{font-size:.82rem;color:var(--ink-soft);margin-top:2px}
+.log-row .badge{margin:0}
+
+/* ---- Timeline ---- */
+.timeline{list-style:none;margin:20px 0 0;padding:0;position:relative}
+.timeline::before{content:"";position:absolute;left:11px;top:6px;bottom:8px;width:2px;background:var(--line-cool)}
+.tl-item{position:relative;padding:0 0 24px 42px}
+.tl-item::before{content:"";position:absolute;left:4px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--teal)}
+.tl-item.is-current::before{background:var(--teal)}
+.tl-item .tl-stage{font-weight:700;color:var(--navy);font-family:var(--sans)}
+.tl-item .tl-when{font-size:.82rem;color:var(--ink-soft)}
+.tl-item .tl-note{font-size:.93rem;margin-top:3px}
+.tl-item .tl-actor{font-size:.8rem;color:var(--ink-soft);font-style:italic;margin-top:2px}
+
+/* ---- Modal ---- */
+dialog{border:0;border-radius:16px;padding:0;max-width:740px;width:calc(100% - 32px);box-shadow:var(--shadow-lg)}
+dialog::backdrop{background:rgba(8,26,43,.55);backdrop-filter:blur(2px)}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:24px 28px;border-bottom:1px solid var(--line-cool);position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0;z-index:2}
+.modal-head h3{font-size:1.28rem;line-height:1.25}
+.modal-body{padding:26px 28px}
+.x{background:none;border:0;font-size:1.6rem;line-height:1;cursor:pointer;color:var(--ink-soft);padding:2px 8px;border-radius:8px}
+.x:hover{background:var(--cream)}
+
+/* ---- Know the issue ---- */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:start}
+.diagram{border:1px solid var(--line-cool);border-radius:var(--radius);overflow:hidden;background:#fff;box-shadow:var(--shadow-sm)}
+.factlist{list-style:none;padding:0;margin:0}
+.factlist li{padding:13px 0 13px 32px;border-bottom:1px solid var(--line);position:relative;color:var(--ink-soft)}
+.factlist li strong{color:var(--ink)}
+.factlist li::before{content:"";position:absolute;left:0;top:19px;width:16px;height:16px;border-radius:50%;background:var(--teal-050);box-shadow:inset 0 0 0 2px var(--teal)}
+.callout{background:var(--amber-bg);border-left:4px solid var(--amber);padding:17px 19px;border-radius:0 10px 10px 0;font-size:.95rem;margin-top:20px}
+
+/* ---- Take action ---- */
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{background:#fff;border:1px solid var(--line-cool);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-sm)}
+.panel h3{font-size:1.2rem}
+.tmpl-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.contact-list{list-style:none;padding:0;margin:0}
+.contact-list li{padding:12px 0;border-bottom:1px solid var(--line)}
+.contact-list li:last-child{border:0}
+.share{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.share a{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;padding:9px 13px;border:1px solid var(--line-cool);border-radius:8px;background:#fff;color:var(--navy)}
+.share a:hover{background:var(--navy-050);text-decoration:none;border-color:var(--navy)}
+.meeting{display:flex;gap:15px;padding:14px 0;border-bottom:1px solid var(--line)}
+.meeting:last-child{border:0}
+.meeting .date{flex:0 0 60px;text-align:center;background:var(--navy);border-radius:11px;padding:9px 0;color:#fff}
+.meeting .date .d{font-family:var(--serif);font-size:1.5rem;font-weight:700;line-height:1}
+.meeting .date .m{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#a9bccd;margin-top:2px}
+
+/* ---- Updates ---- */
+.upd-card{background:#fff;border:1px solid var(--line-cool);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.upd-card .date{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-700)}
+.upd-card h3{margin:6px 0 8px;font-size:1.18rem}
+.upd-card p{margin:0;color:var(--ink-soft);font-size:.96rem}
+
+/* ---- Footer ---- */
+footer.site{background:var(--navy-900);color:#a9b6c6;padding:66px 0 28px;font-size:.93rem}
+footer.site h4{font-family:var(--sans);color:#fff;font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;margin-bottom:16px;font-weight:700}
+.foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.3fr;gap:38px}
+footer.site a{color:#b8c4d3}footer.site a:hover{color:#fff}
+footer.site ul{list-style:none;padding:0;margin:0}
+footer.site li{margin-bottom:9px}
+footer.site .brand .bt{color:#fff}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.13);margin-top:40px;padding-top:22px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:.82rem;color:#8595a8}
+.foot-note{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:16px 18px;font-size:.82rem;color:#9fb0c4;margin-top:22px;line-height:1.55}
+
+/* ---- Toast ---- */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(30px);background:var(--navy);color:#fff;padding:15px 24px;border-radius:12px;box-shadow:var(--shadow-lg);opacity:0;pointer-events:none;transition:all .3s ease;z-index:4000;max-width:90vw;font-weight:500}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.mono{font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.center{text-align:center}
+.mt0{margin-top:0}
+[hidden]{display:none !important}
+
+/* ---- Responsive ---- */
+@media(max-width:920px){
+  .pillars,.counters,.two-col,.action-grid,.foot-grid{grid-template-columns:1fr 1fr}
+  .map-shell{grid-template-columns:1fr}
+  .map-side{border-right:0;border-bottom:1px solid var(--line);max-height:none}
+  .nav-links{display:none}
+  .menu-btn{display:inline-flex}
+  .nav-links.open{display:flex;position:absolute;top:76px;left:0;right:0;flex-direction:column;background:#fff;border-bottom:1px solid var(--line-cool);padding:14px 26px;gap:2px;align-items:stretch;box-shadow:var(--shadow)}
+  .section{padding:64px 0}
+}
+@media(max-width:640px){
+  body{font-size:16px}
+  .counters,.form-grid,.foot-grid,.action-grid,.pillars,.two-col{grid-template-columns:1fr}
+  .log-row{grid-template-columns:1fr;gap:9px}
+  .hero__inner{padding:70px 0 60px}
+  .hero__stats{gap:26px}
+  .nav-cta .btn:first-child{display:none}
+  .section{padding:54px 0}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important;scroll-behavior:auto !important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to main content</a>
+
+<!-- ============ UTILITY BAR ============ -->
+<div class="utility">
+  <div class="wrap">
+    <span class="u-left" data-i18n="util.tag">An independent public record · Rutherford County, Tennessee</span>
+    <a href="#know" data-i18n="util.about">About</a>
+    <a href="#updates" data-i18n="util.news">Newsroom</a>
+    <a href="#account" data-i18n="util.data">Accountability</a>
+    <a href="#action" data-i18n="util.contact">Contact</a>
+    <div class="langtoggle" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="es" aria-pressed="false">ES</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HEADER / NAV ============ -->
+<header class="site">
+  <div class="wrap navbar">
+    <a class="brand" href="#top">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path fill="#12314e" d="M20 2l15 6v9c0 9.3-6.1 17.9-15 21C11.1 34.9 5 26.3 5 17V8l15-6z"/><path fill="#0e7c7b" d="M20 9.5l8.5 3.4V17c0 5.6-3.5 10.8-8.5 12.7C15 27.8 11.5 22.6 11.5 17v-4.1L20 9.5z"/><circle cx="20" cy="16.5" r="3.2" fill="#fff"/><path fill="#fff" d="M20 20c-2.6 0-4.7 1.6-4.7 3.6h9.4C24.7 21.6 22.6 20 20 20z"/></svg>
+      <span class="bt">Civic Sentinel<small data-i18n="brand.sub">Rutherford County, TN</small></span>
+    </a>
+    <button class="menu-btn" aria-expanded="false" aria-controls="navlinks" aria-label="Menu">☰</button>
+    <ul class="nav-links" id="navlinks">
+      <li><a href="#top" data-i18n="nav.home">Home</a></li>
+      <li><a href="#issues" data-i18n="nav.issues">Issue Log</a></li>
+      <li><a href="#map" data-i18n="nav.map">The Map</a></li>
+      <li><a href="#know" data-i18n="nav.know">Know the Issue</a></li>
+      <li><a href="#account" data-i18n="nav.account">Accountability</a></li>
+      <li><a href="#action" data-i18n="nav.action">Take Action</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button class="btn btn--ghost btn--sm" data-open="track" data-i18n="cta.track">Track an issue</button>
+      <button class="btn btn--primary btn--sm" data-open="report" data-i18n="cta.report">Report an issue</button>
+    </div>
+  </div>
+</header>
+
+<a id="top"></a>
+<main id="main">
+
+<!-- ============ HERO ============ -->
+<section class="hero" aria-label="Introduction">
+  <!-- Bespoke topographic-survey backdrop: concentric karst-depth contours -->
+  <div class="hero__grid" aria-hidden="true"></div>
+  <div class="hero__bg" aria-hidden="true">
+    <svg viewBox="0 0 1440 720" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <path id="contour" d="M0,-100 C48,-96 90,-58 96,-12 C102,34 66,86 14,96 C-40,106 -94,72 -98,18 C-102,-36 -56,-104 0,-100 Z"/>
+        <linearGradient id="cg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#5fc9c5" stop-opacity=".55"/>
+          <stop offset="1" stop-color="#5fc9c5" stop-opacity=".05"/>
+        </linearGradient>
+      </defs>
+      <g stroke="url(#cg)" fill="none" stroke-width="1.4" vector-effect="non-scaling-stroke" transform="translate(1120,250)">
+        <use href="#contour" transform="scale(.28)"/><use href="#contour" transform="scale(.55)"/>
+        <use href="#contour" transform="scale(.85)"/><use href="#contour" transform="scale(1.18)"/>
+        <use href="#contour" transform="scale(1.54)"/><use href="#contour" transform="scale(1.94)"/>
+        <use href="#contour" transform="scale(2.38)"/><use href="#contour" transform="scale(2.86)"/>
+        <use href="#contour" transform="scale(3.4)"/>
+      </g>
+      <g stroke="#4a86ad" stroke-opacity=".28" fill="none" stroke-width="1.2" vector-effect="non-scaling-stroke" transform="translate(300,560) rotate(18)">
+        <use href="#contour" transform="scale(.3)"/><use href="#contour" transform="scale(.62)"/>
+        <use href="#contour" transform="scale(.98)"/><use href="#contour" transform="scale(1.4)"/>
+        <use href="#contour" transform="scale(1.9)"/><use href="#contour" transform="scale(2.5)"/>
+      </g>
+    </svg>
+  </div>
+  <div class="hero__inner">
+    <div class="wrap">
+      <p class="eyebrow" data-hero="eyebrow">A public record for our community</p>
+      <h1 data-hero="title">See it. Log it. Track it to resolution.</h1>
+      <p class="hero__tag" data-hero="tag">An independent, transparent record of community issues in Rutherford County — reported by residents, followed publicly from the moment each is acknowledged to the day it is resolved.</p>
+      <div class="hero__cta">
+        <button class="btn btn--primary" data-open="report" data-i18n="cta.report">Report an issue</button>
+        <button class="btn btn--ghost" data-open="track" data-i18n="cta.track">Track an issue</button>
+      </div>
+      <div class="hero__dots" role="tablist" aria-label="Highlights">
+        <button aria-pressed="true" aria-label="Message 1"></button>
+        <button aria-pressed="false" aria-label="Message 2"></button>
+        <button aria-pressed="false" aria-label="Message 3"></button>
+      </div>
+      <div class="hero__stats" aria-label="At a glance">
+        <div class="hero__stat"><div class="n" id="h-logged">—</div><div class="l" data-i18n="hero.s1">Issues on the public record</div></div>
+        <div class="hero__stat"><div class="n" id="h-resolved">—</div><div class="l" data-i18n="hero.s2">Tracked to resolution</div></div>
+        <div class="hero__stat"><div class="n">4</div><div class="l" data-i18n="hero.s3">Official data sources</div></div>
+        <div class="hero__stat"><div class="n">100%</div><div class="l" data-i18n="hero.s4">Public &amp; append-only</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero__local">
+    <div class="wrap">
+      <span data-i18n="hero.serving"><strong>Now serving:</strong> infrastructure &amp; roads · water, drainage &amp; karst hazards · environmental &amp; drilling · public safety · zoning &amp; development</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CREDIBILITY STRIP ============ -->
+<div class="cred">
+  <div class="wrap">
+    <span class="clabel" data-i18n="cred.label">Built on official public records</span>
+    <span class="src"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M12 22s8-4.5 8-11.5A8 8 0 0 0 4 10.5C4 17.5 12 22 12 22z"/><circle cx="12" cy="10.5" r="2.5"/></svg>TDEC <span data-i18n="cred.tdec">Water Resources</span></span>
+    <span class="src"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>USGS <span data-i18n="cred.usgs">Karst Mapping</span></span>
+    <span class="src"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>Rutherford County <span data-i18n="cred.gis">GIS</span></span>
+    <span class="src"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>EFI Global <span data-i18n="cred.efi">Engineering</span></span>
+  </div>
+</div>
+
+<!-- ============ PILLARS ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="sec-head">
+      <div style="max-width:60ch">
+        <p class="eyebrow" data-i18n="pillar.eyebrow">How Civic Sentinel works</p>
+        <h2 data-i18n="pillar.title">A single, accountable path from concern to resolution</h2>
+        <div class="rule"></div>
+        <p class="lead" data-i18n="pillar.lead">Three steps, on one public record. Nothing is edited away; every issue moves forward in the open.</p>
+      </div>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <span class="step-n">01</span>
+        <div class="ico" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+        <h3 data-i18n="pillar.report.t">Report</h3>
+        <p data-i18n="pillar.report.d">Flag a problem where it's happening. A short guided form drops a pin, captures the details, and issues a tracking ID.</p>
+        <a href="#" data-open="report" data-i18n="pillar.report.l">Start a report →</a>
+      </div>
+      <div class="pillar">
+        <span class="step-n">02</span>
+        <div class="ico" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+        <h3 data-i18n="pillar.track.t">Track</h3>
+        <p data-i18n="pillar.track.d">Every report gets a public, append-only timeline — each status change with its date, its note, and who acted.</p>
+        <a href="#issues" data-i18n="pillar.track.l">Browse the log →</a>
+      </div>
+      <div class="pillar">
+        <span class="step-n">03</span>
+        <div class="ico" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0e7c7b" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3 data-i18n="pillar.resolve.t">Resolve</h3>
+        <p data-i18n="pillar.resolve.d">Accountability in the open. Live counters show what's logged, acknowledged, and resolved — and how long it took.</p>
+        <a href="#account" data-i18n="pillar.resolve.l">See the record →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RECENT ISSUES ============ -->
+<section class="section section--cream">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow" data-i18n="recent.eyebrow">From the public log</p>
+        <h2 data-i18n="recent.title">Recently on the record</h2>
+      </div>
+      <a class="btn btn--ghost btn--sm" href="#issues" data-i18n="recent.all">View all issues →</a>
+    </div>
+    <div class="carousel" id="carousel" aria-label="Recently reported issues"></div>
+  </div>
+</section>
+
+<!-- ============ MAP ============ -->
+<section class="section" id="map">
+  <div class="wrap">
+    <div class="sec-head">
+      <div style="max-width:64ch">
+        <p class="eyebrow" data-i18n="map.eyebrow">What's beneath — and around us</p>
+        <h2 data-i18n="map.title">The Map</h2>
+        <div class="rule"></div>
+        <p class="lead" data-i18n="map.lead">Search your street, toggle the layers, and see the proximity for yourself. Reported issues sit alongside the official reference data — TDEC well registrations, USGS sinkholes, and district boundaries.</p>
+      </div>
+    </div>
+    <div class="map-shell">
+      <div class="map-side">
+        <div class="map-search">
+          <input id="mapSearch" type="text" placeholder="Search an address…" aria-label="Search address" />
+          <button class="btn btn--primary btn--sm" id="mapSearchBtn" data-i18n="map.go">Go</button>
+        </div>
+        <h3 data-i18n="map.layers">Map layers</h3>
+        <label class="layer"><input type="checkbox" data-layer="issues" checked><span><strong data-i18n="map.l.issues">Reported issues</strong><span class="lg" data-i18n="map.l.issues.d">By category &amp; current status</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="sink" checked><span><strong><span class="legend-dot" style="background:#d97706"></span>USGS sinkholes</strong><span class="lg" data-i18n="map.l.sink.d">Documented sinkholes &amp; depressions</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="wells" checked><span><strong><span class="legend-dot" style="background:#0e7c7b"></span>TDEC wells</strong><span class="lg" data-i18n="map.l.wells.d">Registered water wells — linked to logs</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="bounds"><span><strong data-i18n="map.l.bounds">Boundaries</strong><span class="lg" data-i18n="map.l.bounds.d">Jurisdiction &amp; commission districts</span></span></label>
+        <p class="hint" style="margin-top:16px" data-i18n="map.tip">Tip: while reporting, click the map to drop your issue's location.</p>
+        <p class="hint" data-i18n="map.src">Sources: TDEC Water Resources; USGS Karst Map; Rutherford County GIS. Reference data shown for context.</p>
+      </div>
+      <div><div id="leafmap"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACCOUNTABILITY ============ -->
+<section class="section section--navy" id="account">
+  <div class="wrap">
+    <div class="account-head">
+      <p class="eyebrow" data-i18n="acc.eyebrow">Community accountability</p>
+      <h2 data-i18n="acc.title">The record, in the open</h2>
+      <div class="rule"></div>
+      <p class="lead" data-i18n="acc.lead">These figures are computed live from every issue in the public log. No issue is edited or deleted — each is only advanced through its lifecycle, on the record.</p>
+    </div>
+    <div class="counters">
+      <div class="counter"><div class="num" id="c-logged">0</div><div class="lbl" data-i18n="acc.logged">Issues logged</div><div class="sub" data-i18n="acc.logged.s">On the public record</div></div>
+      <div class="counter"><div class="num" id="c-ack">0</div><div class="lbl" data-i18n="acc.ack">Acknowledged</div><div class="sub" data-i18n="acc.ack.s">Received &amp; routed</div></div>
+      <div class="counter"><div class="num" id="c-resolved">0</div><div class="lbl" data-i18n="acc.resolved">Resolved</div><div class="sub" data-i18n="acc.resolved.s">Closed with a summary</div></div>
+      <div class="counter"><div class="num" id="c-median">0</div><div class="lbl" data-i18n="acc.median">Median days to resolution</div><div class="sub" data-i18n="acc.median.s">Across resolved issues</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PUBLIC ISSUE LOG ============ -->
+<section class="section" id="issues">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow" data-i18n="log.eyebrow">Search &amp; filter</p>
+        <h2 data-i18n="log.title">Public issue log</h2>
+      </div>
+      <button class="btn btn--primary btn--sm" data-open="report" data-i18n="cta.report">Report an issue</button>
+    </div>
+    <div class="filters">
+      <div class="field"><label for="f-cat" data-i18n="log.f.cat">Category</label><select id="f-cat"></select></div>
+      <div class="field"><label for="f-status" data-i18n="log.f.status">Status</label><select id="f-status"></select></div>
+      <div class="field"><label for="f-sort" data-i18n="log.f.sort">Sort by</label><select id="f-sort">
+        <option value="new" data-i18n="log.sort.new">Newest first</option>
+        <option value="old" data-i18n="log.sort.old">Oldest first</option>
+        <option value="open" data-i18n="log.sort.open">Longest open</option>
+      </select></div>
+      <div class="field"><label for="f-q" data-i18n="log.f.q">Keyword</label><input id="f-q" type="text" placeholder="e.g. sinkhole, water…" /></div>
+    </div>
+    <p class="hint" id="log-count" style="margin-bottom:16px"></p>
+    <div class="log-list" id="logList"></div>
+  </div>
+</section>
+
+<!-- ============ KNOW THE ISSUE ============ -->
+<section class="section section--cream" id="know">
+  <div class="wrap">
+    <p class="eyebrow" data-i18n="know.eyebrow">Know the issue</p>
+    <h2 data-i18n="know.title">Karst 101 — the ground under Rutherford County</h2>
+    <div class="rule"></div>
+    <div class="two-col" style="margin-top:30px">
+      <div>
+        <p data-i18n="know.p1">Much of Rutherford County sits on <strong>karst</strong> — limestone that groundwater slowly dissolves into caves, cavities, and solution voids. Thin layers of clay often bridge those voids near the surface. When drilling or heavy construction disturbs that bridge, the ground above can settle, crack, or collapse.</p>
+        <p data-i18n="know.p2">This isn't hypothetical here. County records document a geothermal-well project at an existing school that damaged a neighboring home and drew a state regulatory violation. That is why <em>testing before building</em> is the whole point.</p>
+        <div class="callout" data-i18n="know.callout"><strong>On the record:</strong> a registered well near the proposed site logged open voids at roughly 120–121 ft and again at 250–251 ft — cavities exactly like the ones that make un-surveyed drilling risky.</div>
+      </div>
+      <div class="diagram" aria-label="Cross-section of karst terrain">
+        <svg viewBox="0 0 400 300" role="img" width="100%">
+          <rect width="400" height="300" fill="#eef2f5"/>
+          <rect y="0" width="400" height="46" fill="#7a9a6b"/>
+          <text x="14" y="28" fill="#233417" font-size="13" font-family="Public Sans,sans-serif" font-weight="700">Topsoil &amp; clay bridge</text>
+          <rect y="46" width="400" height="210" fill="#d3c19a"/>
+          <text x="14" y="70" fill="#5a4a24" font-size="12" font-family="Public Sans,sans-serif" font-weight="700">Limestone bedrock (karst)</text>
+          <ellipse cx="120" cy="130" rx="46" ry="24" fill="#eef2f5"/>
+          <ellipse cx="272" cy="176" rx="60" ry="30" fill="#eef2f5"/>
+          <ellipse cx="182" cy="216" rx="34" ry="18" fill="#eef2f5"/>
+          <text x="97" y="134" fill="#2c5556" font-size="11" font-family="Public Sans,sans-serif">void</text>
+          <text x="245" y="180" fill="#2c5556" font-size="11" font-family="Public Sans,sans-serif">solution void</text>
+          <path d="M302 8 L302 250" stroke="#b42318" stroke-width="4" stroke-dasharray="6 5"/>
+          <circle cx="302" cy="8" r="5" fill="#b42318"/>
+          <text x="310" y="20" fill="#b42318" font-size="11" font-family="Public Sans,sans-serif" font-weight="700">drill</text>
+          <rect y="256" width="400" height="44" fill="#9fb2c6"/>
+          <text x="14" y="282" fill="#22303f" font-size="12" font-family="Public Sans,sans-serif" font-weight="700">Deeper cavernous rock &amp; groundwater</text>
+        </svg>
+      </div>
+    </div>
+
+    <h3 style="margin-top:48px" data-i18n="know.right.t">Doing it right — before we build again</h3>
+    <div class="two-col" style="margin-top:14px">
+      <ul class="factlist">
+        <li data-i18n="know.right.1">Non-invasive <strong>geophysical surveys</strong> (electrical resistivity, microgravity) to image voids before any drill touches ground.</li>
+        <li data-i18n="know.right.2">A <strong>site-specific geotechnical assessment</strong> — not a generic regional assumption.</li>
+        <li data-i18n="know.right.3">Detailed <strong>karst-feature mapping</strong>: sinkholes, springs, and depressions on and around the parcel.</li>
+      </ul>
+      <ul class="factlist">
+        <li data-i18n="know.right.4">Decisions made <strong>after</strong> the evidence is in — not before.</li>
+        <li data-i18n="know.right.5">Findings published in <strong>plain language</strong> so residents can read them.</li>
+        <li data-i18n="know.right.6">An <strong>independent</strong> review, so the builder isn't grading its own homework.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TAKE ACTION ============ -->
+<section class="section" id="action">
+  <div class="wrap">
+    <p class="eyebrow" data-i18n="act.eyebrow">Take action</p>
+    <h2 data-i18n="act.title">Make your voice part of the record</h2>
+    <div class="rule"></div>
+    <div class="action-grid" style="margin-top:30px">
+
+      <div class="panel">
+        <h3 data-i18n="act.msg.t">Write your officials — 60-second letter</h3>
+        <p class="help" data-i18n="act.msg.d">Edit freely, then copy it into an email or read it aloud at a meeting. Addressed to county commissioners, school-board members, and state legislators.</p>
+        <textarea id="tmpl" aria-label="Message template" rows="9"></textarea>
+        <div class="tmpl-actions">
+          <button class="btn btn--primary btn--sm" id="copyTmpl" data-i18n="act.msg.copy">Copy message</button>
+          <button class="btn btn--ghost btn--sm" id="resetTmpl" data-i18n="act.msg.reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 data-i18n="act.contacts.t">Who to contact</h3>
+        <ul class="contact-list">
+          <li><strong data-i18n="act.contacts.1">County Commissioners</strong><br><a href="https://rutherfordcountytn.gov" target="_blank" rel="noopener">rutherfordcountytn.gov</a> <span class="hint" data-i18n="act.contacts.1d">— find your district rep</span></li>
+          <li><strong data-i18n="act.contacts.2">Board of Education</strong><br><a href="https://rcschools.net" target="_blank" rel="noopener">rcschools.net</a> <span class="hint" data-i18n="act.contacts.2d">— members &amp; meeting agendas</span></li>
+          <li><strong data-i18n="act.contacts.3">State Legislators</strong><br><a href="https://www.capitol.tn.gov/legislators/" target="_blank" rel="noopener">Find My Legislator (TN)</a></li>
+        </ul>
+        <h3 style="margin-top:22px" data-i18n="act.share.t">Spread the word · Comparte</h3>
+        <div class="share" id="shareRow"></div>
+      </div>
+
+      <div class="panel">
+        <h3 data-i18n="act.meet.t">Upcoming meetings</h3>
+        <p class="help" data-i18n="act.meet.d">Public comment periods let residents speak. Arrive early, sign the speaker list, keep it to the time limit, and stick to the facts.</p>
+        <div id="meetings"></div>
+      </div>
+
+      <div class="panel">
+        <h3 data-i18n="act.remind.t">Meeting reminders</h3>
+        <p class="help" data-i18n="act.remind.d">Get a note before key dates. No spam, no sharing, unsubscribe anytime.</p>
+        <form id="remindForm">
+          <div class="field"><label for="remEmail" data-i18n="act.remind.email">Email</label><input id="remEmail" type="email" required placeholder="you@example.com" /></div>
+          <button class="btn btn--primary btn--block" type="submit" data-i18n="act.remind.btn">Remind me</button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ UPDATES ============ -->
+<section class="section section--cream" id="updates">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <p class="eyebrow" data-i18n="upd.eyebrow">Newsroom</p>
+        <h2 data-i18n="upd.title">Latest updates</h2>
+      </div>
+    </div>
+    <div class="two-col">
+      <div id="updatesList"></div>
+      <div class="panel">
+        <h3 data-i18n="upd.sub.t">Get updates by email</h3>
+        <p class="help" data-i18n="upd.sub.d">A short digest when issues change status or new records are added. No spam, unsubscribe anytime.</p>
+        <form id="subForm">
+          <div class="field"><label for="subEmail" data-i18n="upd.sub.email">Email address</label><input id="subEmail" type="email" required placeholder="you@example.com" /></div>
+          <button class="btn btn--primary btn--block" type="submit" data-i18n="upd.sub.btn">Subscribe</button>
+        </form>
+        <p class="hint" style="margin-top:12px" data-i18n="upd.sub.note">You'll receive a confirmation email. We never share your address.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top">
+          <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><path fill="#5fc9c5" d="M20 2l15 6v9c0 9.3-6.1 17.9-15 21C11.1 34.9 5 26.3 5 17V8l15-6z"/><path fill="#0d2438" d="M20 9.5l8.5 3.4V17c0 5.6-3.5 10.8-8.5 12.7C15 27.8 11.5 22.6 11.5 17v-4.1L20 9.5z"/><circle cx="20" cy="16.5" r="3.2" fill="#fff"/><path fill="#fff" d="M20 20c-2.6 0-4.7 1.6-4.7 3.6h9.4C24.7 21.6 22.6 20 20 20z"/></svg>
+          <span class="bt">Civic Sentinel<small style="color:#8595a8" data-i18n="brand.sub">Rutherford County, TN</small></span>
+        </a>
+        <p style="margin-top:16px;max-width:38ch" data-i18n="foot.tag">See it. Log it. Track it to resolution. A transparent public record of community issues, from acknowledgement to resolution.</p>
+      </div>
+      <div>
+        <h4 data-i18n="foot.explore">Explore</h4>
+        <ul>
+          <li><a href="#issues" data-i18n="nav.issues">Issue Log</a></li>
+          <li><a href="#map" data-i18n="nav.map">The Map</a></li>
+          <li><a href="#know" data-i18n="nav.know">Know the Issue</a></li>
+          <li><a href="#account" data-i18n="nav.account">Accountability</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i18n="foot.act">Participate</h4>
+        <ul>
+          <li><a href="#" data-open="report" data-i18n="cta.report">Report an issue</a></li>
+          <li><a href="#" data-open="track" data-i18n="cta.track">Track an issue</a></li>
+          <li><a href="#updates" data-i18n="util.news">Newsroom</a></li>
+          <li><a href="#action" data-i18n="act.remind.t">Meeting reminders</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 data-i18n="foot.contact">Contact &amp; jurisdiction</h4>
+        <ul>
+          <li data-i18n="foot.serves">Serving Rutherford County, Tennessee</li>
+          <li><a href="mailto:hello@civicsentinel.example">hello@civicsentinel.example</a></li>
+          <li><a href="https://rutherfordcountytn.gov" target="_blank" rel="noopener">rutherfordcountytn.gov</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-note" data-i18n="foot.disclaimer">
+      This site provides general educational and civic information and a public issue log. It is not legal or engineering advice, and it takes no position on any ongoing litigation. Reference data (TDEC, USGS, county GIS) is shown for context; always confirm against the official source record.
+    </div>
+    <div class="foot-bottom">
+      <span>© <span id="year"></span> Civic Sentinel · Rutherford County, TN</span>
+      <span><a href="#" data-i18n="foot.privacy">Privacy</a> · <a href="#" data-i18n="foot.access">Accessibility statement</a> · <a href="#" data-i18n="foot.terms">Terms</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ REPORT DIALOG ============ -->
+<dialog id="dlg-report" aria-labelledby="report-title">
+  <div class="modal-head">
+    <h3 id="report-title" class="mt0" data-i18n="report.title">Report an issue</h3>
+    <button class="x" data-close aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <div id="reportForm">
+      <div class="steps">
+        <span class="step-pill active" data-step="1" data-i18n="report.s1">1 · What</span>
+        <span class="step-pill" data-step="2" data-i18n="report.s2">2 · Where</span>
+        <span class="step-pill" data-step="3" data-i18n="report.s3">3 · You</span>
+      </div>
+
+      <div data-panel="1">
+        <div class="field"><label for="r-cat" data-i18n="report.cat">Category <span class="req">*</span></label><select id="r-cat"></select></div>
+        <div class="field"><label for="r-title" data-i18n="report.summary">Short summary <span class="req">*</span></label><input id="r-title" maxlength="90" placeholder="e.g. New depression opening in field off Poplar Hill Rd" /></div>
+        <div class="field"><label for="r-desc" data-i18n="report.desc">Describe what you're seeing <span class="req">*</span></label><textarea id="r-desc" placeholder="What, when, how big, any changes over time…"></textarea></div>
+        <div class="field"><label for="r-photo" data-i18n="report.photo">Photo (optional)</label><input id="r-photo" type="file" accept="image/*" /><p class="help" data-i18n="report.photo.d">A photo helps reviewers triage faster.</p></div>
+        <button class="btn btn--primary btn--block" data-next="2" data-i18n="report.next">Next: where is it? →</button>
+      </div>
+
+      <div data-panel="2" hidden>
+        <div class="field"><label for="r-addr" data-i18n="report.addr">Address or nearest cross-street</label>
+          <div class="map-search"><input id="r-addr" placeholder="Search an address…" /><button class="btn btn--ghost btn--sm" id="r-addr-btn" data-i18n="map.go">Go</button></div>
+        </div>
+        <div id="rmap" style="height:290px;border:1px solid var(--line-cool);border-radius:10px;background:#e9eef2"></div>
+        <p class="help" data-i18n="report.map.d">Click the map to drop a pin at the exact spot. <span id="r-coords" class="mono"></span></p>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn--ghost btn--sm" data-back="1" data-i18n="report.back">← Back</button>
+          <button class="btn btn--primary btn--sm" data-next="3" style="flex:1" data-i18n="report.next3">Next: your contact →</button>
+        </div>
+      </div>
+
+      <div data-panel="3" hidden>
+        <div class="form-grid">
+          <div class="field"><label for="r-name" data-i18n="report.name">Your name (optional)</label><input id="r-name" /></div>
+          <div class="field"><label for="r-contact" data-i18n="report.contact">Email or phone for updates</label><input id="r-contact" placeholder="you@example.com" /></div>
+        </div>
+        <p class="help" data-i18n="report.contact.d">We only use this to send you status changes on your report. It is never shown publicly.</p>
+        <div id="ts-widget" style="margin:12px 0"></div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn--ghost btn--sm" data-back="2" data-i18n="report.back">← Back</button>
+          <button class="btn btn--primary btn--sm" id="submitReport" style="flex:1" data-i18n="report.submit">Submit report</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="reportDone" hidden class="center">
+      <div style="width:66px;height:66px;border-radius:50%;background:var(--green-bg);display:grid;place-items:center;margin:10px auto 18px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c7146" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h3 data-i18n="report.done.t">Report submitted</h3>
+      <p id="reportDoneMsg" data-i18n="report.done.d">Thank you. Your issue is now on the public record at stage <strong>Submitted</strong>. Save your tracking ID:</p>
+      <p class="mono" style="font-size:1.7rem;font-weight:800;color:var(--teal-700)" id="newId">—</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn--primary btn--sm" id="viewNew" data-i18n="report.done.view">View my issue</button>
+        <button class="btn btn--ghost btn--sm" data-close data-i18n="report.done.close">Close</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- ============ DETAIL DIALOG ============ -->
+<dialog id="dlg-detail" aria-labelledby="detail-title">
+  <div class="modal-head">
+    <h3 id="detail-title" class="mt0">Issue</h3>
+    <button class="x" data-close aria-label="Close">×</button>
+  </div>
+  <div class="modal-body" id="detailBody"></div>
+</dialog>
+
+<!-- ============ TRACK DIALOG ============ -->
+<dialog id="dlg-track" aria-labelledby="track-title">
+  <div class="modal-head">
+    <h3 id="track-title" class="mt0" data-i18n="track.title">Track an issue</h3>
+    <button class="x" data-close aria-label="Close">×</button>
+  </div>
+  <div class="modal-body">
+    <p data-i18n="track.d">Enter a tracking ID (for example <span class="mono">CS-2026-0142</span>) or browse the full public log.</p>
+    <div class="map-search">
+      <input id="trackId" placeholder="CS-2026-…" aria-label="Tracking ID" />
+      <button class="btn btn--primary" id="trackBtn" data-i18n="track.find">Find</button>
+    </div>
+    <p id="trackErr" class="hint" style="color:#b42318" hidden data-i18n="track.err">No issue found with that ID. Check the code and try again.</p>
+    <p style="margin-top:16px"><a href="#issues" data-close data-i18n="track.browse">Or browse the full issue log →</a></p>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>

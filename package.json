@@ -1,0 +1,11 @@
+{
+  "name": "civic-sentinel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Civic Sentinel — public issue reporting and lifecycle tracking for Rutherford County, TN.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}
