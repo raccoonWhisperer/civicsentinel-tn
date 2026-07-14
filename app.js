@@ -265,7 +265,7 @@ const I18N = {
     "acc.logged.s":"En el registro público","acc.ack.s":"Recibidos y encaminados","acc.resolved.s":"Cerrados con resumen","acc.median.s":"Entre casos resueltos",
     "recent.title":"Recientemente en el registro",
     "upd.sub.note":"Recibirás un correo de confirmación. Nunca compartimos tu dirección.",
-    "log.eyebrow":"Buscar y filtrar","log.title":"Registro público de casos","log.f.cat":"Categoría","log.f.status":"Estado","log.f.sort":"Ordenar por","log.f.q":"Palabra clave","log.sort.new":"Más recientes","log.sort.old":"Más antiguos","log.sort.open":"Más tiempo abiertos",
+    "log.eyebrow":"Buscar y filtrar","log.title":"Registro público de casos","log.f.cat":"Categoría","log.f.status":"Estado","log.f.sort":"Ordenar por","log.f.q":"Palabra clave","log.f.from":"Desde","log.f.to":"Hasta","log.f.clear":"Limpiar","log.sort.new":"Más recientes","log.sort.old":"Más antiguos","log.sort.open":"Más tiempo abiertos",
     "know.eyebrow":"Conoce el tema","know.title":"Karst 101 — el suelo bajo el Condado de Rutherford",
     "know.p1":"Gran parte del condado está sobre <strong>karst</strong> — piedra caliza que el agua subterránea disuelve lentamente en cuevas y vacíos. Capas delgadas de arcilla suelen puentear esos vacíos cerca de la superficie. Cuando la perforación o construcción pesada altera ese puente, el suelo puede asentarse, agrietarse o colapsar.",
     "know.p2":"Esto no es hipotético aquí. Los registros del condado documentan un proyecto de pozo geotérmico en una escuela existente que dañó una casa vecina y provocó una violación regulatoria estatal. Por eso <em>probar antes de construir</em> es el objetivo.",
@@ -376,6 +376,9 @@ async function renderLog(){
   if(cat!=="all") items = items.filter(i=>i.category===cat);
   if(status!=="all") items = items.filter(i=>stageClass(i.stage)===status);
   if(q) items = items.filter(i=>(i.title+" "+i.description+" "+(i.keywords||"")+" "+i.location.address+" "+i.id).toLowerCase().includes(q));
+  const from = ($("#f-from") && $("#f-from").value) || "", to = ($("#f-to") && $("#f-to").value) || "";
+  if(from) items = items.filter(i=> (i.created_at||"") >= from);
+  if(to)   items = items.filter(i=> (i.created_at||"") <= to);
   if(sort==="new") items.sort((a,b)=> b.created_at.localeCompare(a.created_at));
   if(sort==="old") items.sort((a,b)=> a.created_at.localeCompare(b.created_at));
   if(sort==="open") items.sort((a,b)=> openDays(b)-openDays(a));
@@ -737,9 +740,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("#trackId").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#trackBtn").click(); });
 
   // filters
-  ["f-cat","f-status","f-sort","f-q"].forEach(id=>{
-    $("#"+id).addEventListener(id==="f-q"?"input":"change", renderLog);
+  ["f-cat","f-status","f-sort","f-q","f-from","f-to"].forEach(id=>{
+    const el = $("#"+id); if(!el) return;
+    el.addEventListener(id==="f-q"?"input":"change", renderLog);
   });
+  const fClear = $("#f-clear");
+  if(fClear) fClear.addEventListener("click", ()=>{ if($("#f-from")) $("#f-from").value=""; if($("#f-to")) $("#f-to").value=""; renderLog(); });
 
   // template actions
   $("#copyTmpl").addEventListener("click", async ()=>{
