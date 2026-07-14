@@ -20,6 +20,7 @@ const CATEGORIES = [
   "Infrastructure & roads",
   "Water, drainage & karst/sinkhole hazards",
   "Environmental & drilling concerns",
+  "Data centers",
   "Public safety",
   "Zoning & development",
   "Other"
@@ -38,149 +39,54 @@ function stageClass(stage){
 const SITE = { lat: 35.9037, lng: -86.5216, label: "Proposed school site (Dismukes farm, Poplar Hill)" };
 
 /* -------------------------------------------------------------------------
-   Reference layers — official context data (TDEC wells, USGS sinkholes)
-   Each record carries its source link so a marker can deep-link to the
-   primary document, mirroring beforewebuildagain.com's well-log links.
+   Reference layers — VERIFIED public data only.
+   Only the one well tied to a real, citable TDEC log is included. The full
+   TDEC well and USGS sinkhole layers should be imported from the official
+   feeds before launch; until then those layers are intentionally empty
+   rather than populated with unverified points. Coordinates are approximate.
    ------------------------------------------------------------------------- */
 const WELLS = [
-  { id:"20250267", lat:35.9051, lng:-86.5189, depth:"265 ft", voids:"Open voids logged at 120–121 ft and 250–251 ft", source:"https://www.tn.gov/environment/program-areas/wr-water-resources.html", label:"TDEC registered well #20250267" },
-  { id:"20240914", lat:35.9008, lng:-86.5262, depth:"180 ft", voids:"Loss of circulation noted near 96 ft", source:"https://www.tn.gov/environment/program-areas/wr-water-resources.html", label:"TDEC registered well #20240914" },
-  { id:"20231120", lat:35.9072, lng:-86.5241, depth:"210 ft", voids:"No voids noted in log", source:"https://www.tn.gov/environment/program-areas/wr-water-resources.html", label:"TDEC registered well #20231120" }
+  { id:"20250267", lat:35.9051, lng:-86.5189, depth:"per TDEC log", voids:"Open voids logged at ~120–121 ft and ~250–251 ft", source:"https://www.tn.gov/environment/program-areas/wr-water-resources.html", label:"TDEC registered well #20250267 (location approximate)" }
 ];
-const SINKS = [
-  { lat:35.9066, lng:-86.5205, size:"~18 ft dia. depression", source:"https://www.usgs.gov/mission-areas/water-resources/science/karst-aquifers", label:"USGS-mapped sinkhole / depression" },
-  { lat:35.8999, lng:-86.5178, size:"Solution-widened joint", source:"https://www.usgs.gov/mission-areas/water-resources/science/karst-aquifers", label:"USGS-mapped karst feature" },
-  { lat:35.9089, lng:-86.5279, size:"~9 ft dia. sink, reopened after rain", source:"https://www.usgs.gov/mission-areas/water-resources/science/karst-aquifers", label:"USGS-mapped sinkhole" }
-];
-// A light-weight jurisdiction boundary (illustrative polygon around the area).
+// USGS sinkhole layer: to be imported from the official USGS karst dataset.
+// Left empty on purpose — no invented points.
+const SINKS = [];
+// Illustrative outline only — replace with the county GIS boundary before launch.
 const BOUNDS = [[35.885,-86.545],[35.885,-86.500],[35.920,-86.500],[35.920,-86.545]];
 
 /* -------------------------------------------------------------------------
-   SEED DATA — ~8 realistic Rutherford County records, real Poplar Hill
-   context. Each is an append-only record with a full stage_history.
+   SEED DATA — VERIFIED, DOCUMENTED RECORDS ONLY. Mirrors supabase/schema.sql.
+   Every entry is a resident report or a reference to a real public document.
+   Actor "Civic Sentinel (independent intake)" = this project logged it; it
+   does NOT assert that any government office reviewed or acted on the issue.
    ------------------------------------------------------------------------- */
 const SEED = [
   {
-    id:"CS-2025-0087", category:"Environmental & drilling concerns",
-    title:"Geothermal drilling proposed at Poplar Hill school site",
-    description:"A new high school is proposed on karst terrain at the Dismukes farm. Residents are asking for a site-specific geophysical survey before any geothermal wells are drilled, given a documented failure at a nearby elementary school.",
-    location:{ lat:35.9037, lng:-86.5216, address:"Poplar Hill Rd, Rutherford County" },
+    id:"CS-2025-001", category:"Environmental & drilling concerns",
+    title:"Proposed geothermal drilling at the Poplar Hill school site",
+    description:"Residents have asked the county to require a site-specific geophysical survey and an independent geotechnical assessment before any geothermal wells are drilled at the proposed Poplar Hill school site, which sits on karst terrain. The request cites a documented geothermal-drilling failure at a nearby elementary school that damaged a neighboring home and drew a state regulatory violation. Location shown is approximate.",
+    location:{ lat:35.9037, lng:-86.5216, address:"Near Poplar Hill Rd, Rutherford County (approximate)" },
     photos:[], reporter_contact:"withheld", created_at:"2025-08-14",
-    stage:"Under review", assigned_to:"County Public Works — Geotech review",
+    stage:"Acknowledged", assigned_to:null,
     source_links:[{label:"EFI Global engineering assessment", url:"https://www.efiglobal.com/"},{label:"TDEC Notice of Violation (Sept 5, 2025)", url:"https://www.tn.gov/environment.html"}],
     resolution_summary:null, resolved_at:null,
     stage_history:[
-      { stage:"Submitted", timestamp:"2025-08-14", note:"Filed by resident coalition with EFI Global report attached.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2025-08-19", note:"Logged and routed to Public Works.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2025-09-08", note:"Geotech review opened; TDEC Notice of Violation (Sept 5) added to the file.", actor:"County Public Works" }
+      { stage:"Submitted", timestamp:"2025-08-14", note:"Reported by residents requesting geological testing before any drilling.", actor:"Resident" },
+      { stage:"Acknowledged", timestamp:"2025-08-19", note:"Received and logged to the public record by Civic Sentinel. Supporting documents attached. No government action is recorded here unless it is cited to a public document.", actor:"Civic Sentinel (independent intake)" }
     ]
   },
   {
-    id:"CS-2025-0091", category:"Water, drainage & karst/sinkhole hazards",
-    title:"New depression opening in field off Poplar Hill Rd",
-    description:"A shallow bowl-shaped depression appeared and has widened over two weeks after heavy rain, roughly 40 yards from the property line of the proposed site.",
-    location:{ lat:35.9059, lng:-86.5231, address:"Field off Poplar Hill Rd" },
-    photos:[], reporter_contact:"withheld", created_at:"2025-09-02",
-    stage:"Action assigned", assigned_to:"County Engineer — field inspection",
-    source_links:[{label:"USGS Karst Aquifers", url:"https://www.usgs.gov/mission-areas/water-resources/science/karst-aquifers"}],
-    resolution_summary:null, resolved_at:null,
-    stage_history:[
-      { stage:"Submitted", timestamp:"2025-09-02", note:"Photos of the depression uploaded.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2025-09-04", note:"Received; cross-referenced with USGS karst layer.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2025-09-10", note:"Confirmed as a probable karst depression from imagery.", actor:"County Engineer" },
-      { stage:"Action assigned", timestamp:"2025-09-16", note:"Field inspection scheduled; area flagged for monitoring.", actor:"County Engineer" }
-    ]
-  },
-  {
-    id:"CS-2025-0110", category:"Water, drainage & karst/sinkhole hazards",
-    title:"Well #20250267 logs open voids at 120–121 ft and 250–251 ft",
-    description:"A resident flagged the official TDEC well log for well #20250267 near the proposed site, which records open cavities at two depths — the exact hazard that makes un-surveyed drilling risky.",
-    location:{ lat:35.9051, lng:-86.5189, address:"Near Poplar Hill Rd" },
+    id:"CS-2025-002", category:"Water, drainage & karst/sinkhole hazards",
+    title:"TDEC well log #20250267 records open voids near the proposed site",
+    description:"A resident flagged the official TDEC well log for registered well #20250267, which records open voids at roughly 120–121 ft and 250–251 ft — the kind of cavities that make un-surveyed drilling on karst risky. Logged as supporting evidence for the geological-testing request. Location approximate.",
+    location:{ lat:35.9051, lng:-86.5189, address:"Near the proposed Poplar Hill site (approximate)" },
     photos:[], reporter_contact:"withheld", created_at:"2025-09-21",
     stage:"Acknowledged", assigned_to:null,
-    source_links:[{label:"TDEC well log #20250267", url:"https://www.tn.gov/environment/program-areas/wr-water-resources.html"}],
+    source_links:[{label:"TDEC well log #20250267 (TDEC Water Resources)", url:"https://www.tn.gov/environment/program-areas/wr-water-resources.html"}],
     resolution_summary:null, resolved_at:null,
     stage_history:[
-      { stage:"Submitted", timestamp:"2025-09-21", note:"Public well log cited as supporting evidence for CS-2025-0087.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2025-09-24", note:"Recorded as a reference item linked to the drilling review.", actor:"Civic Sentinel intake" }
-    ]
-  },
-  {
-    id:"CS-2025-0064", category:"Public safety",
-    title:"Blind curve with no guardrail near creek crossing",
-    description:"Sight lines at the S-curve before the low-water creek crossing are dangerously short and there is no guardrail on the drop-off side. Two near-misses reported by neighbors.",
-    location:{ lat:35.8981, lng:-86.5297, address:"Old Lascassas Pk near creek crossing" },
-    photos:[], reporter_contact:"withheld", created_at:"2025-06-11",
-    stage:"In progress", assigned_to:"County Highway Dept — signage & barrier",
-    source_links:[], resolution_summary:null, resolved_at:null,
-    stage_history:[
-      { stage:"Submitted", timestamp:"2025-06-11", note:"Reported with two documented near-miss accounts.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2025-06-13", note:"Routed to Highway Department.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2025-06-24", note:"Traffic count and sight-distance study ordered.", actor:"County Highway Dept" },
-      { stage:"Action assigned", timestamp:"2025-07-08", note:"Curve-warning signage approved; guardrail added to work order.", actor:"County Highway Dept" },
-      { stage:"In progress", timestamp:"2025-07-30", note:"Signage installed; guardrail installation scheduled.", actor:"County Highway Dept" }
-    ]
-  },
-  {
-    id:"CS-2024-0203", category:"Infrastructure & roads",
-    title:"Roadbed slumping on Franklin Rd shoulder",
-    description:"A section of shoulder had begun to slump and crack, widening after rain. Reported as a possible subsurface void under the roadbed.",
-    location:{ lat:35.8934, lng:-86.5122, address:"Franklin Rd shoulder" },
-    photos:[], reporter_contact:"withheld", created_at:"2024-10-05",
-    stage:"Resolved", assigned_to:"County Highway Dept",
-    source_links:[], resolution_summary:"Void grouted and shoulder rebuilt; monitored for 60 days with no recurrence.", resolved_at:"2024-12-01",
-    stage_history:[
-      { stage:"Submitted", timestamp:"2024-10-05", note:"Cracking shoulder reported.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2024-10-07", note:"Received and routed.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2024-10-16", note:"Ground-penetrating radar confirmed a shallow void.", actor:"County Highway Dept" },
-      { stage:"Action assigned", timestamp:"2024-10-25", note:"Grouting contractor engaged.", actor:"County Highway Dept" },
-      { stage:"In progress", timestamp:"2024-11-08", note:"Void filled; shoulder reconstruction underway.", actor:"Contractor" },
-      { stage:"Resolved", timestamp:"2024-12-01", note:"Repair completed; 60-day monitoring clear.", actor:"County Highway Dept" }
-    ]
-  },
-  {
-    id:"CS-2023-0402", category:"Water, drainage & karst/sinkhole hazards",
-    title:"Sinkhole reopened after heavy rain near retention pond",
-    description:"A previously filled sinkhole reopened at the edge of a subdivision retention pond following a heavy storm, exposing an open throat about 9 feet across.",
-    location:{ lat:35.9089, lng:-86.5279, address:"Stonebridge subdivision retention pond" },
-    photos:[], reporter_contact:"withheld", created_at:"2023-11-18",
-    stage:"Resolved", assigned_to:"Stormwater Division",
-    source_links:[{label:"USGS Karst Aquifers", url:"https://www.usgs.gov/mission-areas/water-resources/science/karst-aquifers"}],
-    resolution_summary:"Throat plugged with graded stone and geotextile; pond outfall re-engineered to divert flow.", resolved_at:"2024-02-02",
-    stage_history:[
-      { stage:"Submitted", timestamp:"2023-11-18", note:"Reopened sinkhole reported after storm.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2023-11-20", note:"Received; area barricaded.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2023-12-01", note:"Confirmed karst throat feeding the aquifer.", actor:"Stormwater Division" },
-      { stage:"Action assigned", timestamp:"2023-12-14", note:"Remediation design approved.", actor:"Stormwater Division" },
-      { stage:"In progress", timestamp:"2024-01-10", note:"Plugging and outfall rework begun.", actor:"Contractor" },
-      { stage:"Resolved", timestamp:"2024-02-02", note:"Feature stabilized; drainage rerouted.", actor:"Stormwater Division" }
-    ]
-  },
-  {
-    id:"CS-2024-0155", category:"Zoning & development",
-    title:"Rezoning request adjacent to karst recharge area",
-    description:"A commercial rezoning was requested on a parcel that overlaps a mapped karst recharge zone. Residents asked the planning commission to require a hydrogeologic study as a condition.",
-    location:{ lat:35.8956, lng:-86.5061, address:"Parcel off Old Lascassas Pk" },
-    photos:[], reporter_contact:"withheld", created_at:"2024-07-22",
-    stage:"Closed / no action", assigned_to:"Planning Commission",
-    source_links:[], resolution_summary:"Applicant withdrew the rezoning request before the hearing; file closed with no county action required.", resolved_at:"2024-09-30",
-    stage_history:[
-      { stage:"Submitted", timestamp:"2024-07-22", note:"Concern filed ahead of planning hearing.", actor:"Resident" },
-      { stage:"Acknowledged", timestamp:"2024-07-25", note:"Added to planning-comment record.", actor:"Civic Sentinel intake" },
-      { stage:"Under review", timestamp:"2024-08-12", note:"Staff reviewed overlay with recharge map.", actor:"Planning Commission" },
-      { stage:"Closed / no action", timestamp:"2024-09-30", note:"Applicant withdrew; no further action needed.", actor:"Planning Commission" }
-    ]
-  },
-  {
-    id:"CS-2025-0132", category:"Infrastructure & roads",
-    title:"Recurrent water-main break on Old Lascassas Pike",
-    description:"The same stretch of main has broken three times in eight months. Residents suspect ground movement in a karst-prone segment and want the cause investigated, not just patched.",
-    location:{ lat:35.9002, lng:-86.5133, address:"Old Lascassas Pike" },
-    photos:[], reporter_contact:"withheld", created_at:"2026-06-28",
-    stage:"Submitted", assigned_to:null,
-    source_links:[], resolution_summary:null, resolved_at:null,
-    stage_history:[
-      { stage:"Submitted", timestamp:"2026-06-28", note:"Third break in eight months documented with dates.", actor:"Resident" }
+      { stage:"Submitted", timestamp:"2025-09-21", note:"Public TDEC well log cited by a resident as supporting evidence.", actor:"Resident" },
+      { stage:"Acknowledged", timestamp:"2025-09-24", note:"Verified against the official TDEC record and logged.", actor:"Civic Sentinel (independent intake)" }
     ]
   }
 ];
@@ -190,7 +96,7 @@ const SEED = [
    ========================================================================= */
 const API = {
   _issues: SEED.map(x => JSON.parse(JSON.stringify(x))), // deep copy; in-memory store
-  _seq: 133, // next id sequence for CS-2026-0###
+  _seq: 3, // next id sequence (demo mode)
 
   /** GET /api/issues  → Issue[] */
   async list(){ return this._issues.slice(); },
@@ -292,7 +198,8 @@ if (LIVE) {
       category: input.category, title: input.title, description: input.description,
       lat: input.location?.lat, lng: input.location?.lng, address: input.location?.address,
       contact: input.reporter_contact, name: input.reporter_name || '',
-      photoDataUrl: input.photoDataUrl || null, turnstileToken: token || ''
+      photoDataUrl: input.photoDataUrl || null, turnstileToken: token || '',
+      hp: (document.querySelector('#r-hp') && document.querySelector('#r-hp').value) || ''
     });
     return { id: j.id, _pending: true, stage: 'Submitted', category: input.category, title: input.title, location: input.location };
   };
@@ -341,7 +248,7 @@ const I18N = {
     "pillar.resolve.t":"Resolver","pillar.resolve.d":"Rendición de cuentas a la vista. Contadores en vivo muestran lo registrado, reconocido y resuelto — y cuánto tomó.","pillar.resolve.l":"Ver el historial →",
     "recent.eyebrow":"Del registro público","recent.title":"Reportado recientemente","recent.all":"Ver todos los casos →",
     "map.eyebrow":"Lo que hay debajo y alrededor","map.title":"El mapa","map.lead":"Busca tu calle, activa las capas y observa la cercanía tú mismo. Los casos reportados aparecen junto a los datos oficiales — pozos TDEC, sumideros USGS y límites de distritos.",
-    "map.go":"Ir","map.layers":"Capas del mapa","map.l.issues":"Casos reportados","map.l.issues.d":"Por categoría y estado actual","map.l.sink.d":"Sumideros y depresiones documentados","map.l.wells.d":"Pozos de agua registrados — con enlaces","map.l.bounds":"Límites","map.l.bounds.d":"Jurisdicción y distritos","map.tip":"Consejo: al reportar, haz clic en el mapa para ubicar tu caso.","map.src":"Fuentes: TDEC; Mapa kárstico USGS; SIG del Condado. Datos de referencia mostrados como contexto.",
+    "map.go":"Ir","map.layers":"Capas del mapa","map.l.issues":"Casos reportados","map.l.issues.d":"Por categoría y estado actual","map.l.sink.d":"Sumideros y depresiones documentados","map.l.wells.d":"Pozos de agua registrados — con enlaces","map.l.bounds":"Límites","map.l.bounds.d":"Jurisdicción y distritos","map.tip":"Consejo: al reportar, haz clic en el mapa para ubicar tu caso.","map.src":"Fuentes: TDEC; Mapa kárstico USGS; SIG del Condado. Solo se muestran puntos verificados; las capas oficiales completas se importan antes del lanzamiento. Las ubicaciones son aproximadas.",
     "acc.eyebrow":"Rendición de cuentas","acc.title":"El historial, a la vista","acc.lead":"Estos contadores se calculan en vivo con cada caso del registro público. Ningún caso se edita ni se borra — solo avanza en su ciclo.",
     "acc.logged":"Casos registrados","acc.ack":"Reconocidos","acc.resolved":"Resueltos","acc.median":"Días medianos hasta resolución",
     "acc.logged.s":"En el registro público","acc.ack.s":"Recibidos y encaminados","acc.resolved.s":"Cerrados con resumen","acc.median.s":"Entre casos resueltos",
@@ -433,6 +340,7 @@ function catLabel(cat){
     "Infrastructure & roads":"Infraestructura y carreteras",
     "Water, drainage & karst/sinkhole hazards":"Agua, drenaje y peligros kársticos",
     "Environmental & drilling concerns":"Medio ambiente y perforación",
+    "Data centers":"Centros de datos",
     "Public safety":"Seguridad pública",
     "Zoning & development":"Zonificación y desarrollo","Other":"Otro"};
   return m[cat]||cat;
@@ -541,7 +449,7 @@ async function openDetail(id){
     ${resolution}
     ${sources}
     <h4 style="margin-top:20px">${L("detail.timeline","Issue lifecycle timeline")}</h4>
-    <p class="hint">${currentLang==="es"?"Registro transparente y solo-añadir: ninguna entrada se edita ni se borra.":"Transparent, append-only trail — no entry is edited or deleted."}</p>
+    <p class="hint">${currentLang==="es"?"Registro transparente y solo-añadir: ninguna entrada se edita ni se borra. Las entradas marcadas «Civic Sentinel» son registro independiente de este proyecto; las acciones de una oficina gubernamental solo aparecen cuando se citan a un documento público.":"Transparent, append-only trail — no entry is edited or deleted. Entries marked “Civic Sentinel” are independent intake by this project; a government office's action appears only when it is cited to a public document."}</p>
     ${timeline}
     <div class="share" style="margin-top:16px">
       <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" rel="noopener">Facebook</a>
@@ -560,6 +468,7 @@ function catColor(cat){
     "Infrastructure & roads":"#7c3aed",
     "Water, drainage & karst/sinkhole hazards":"#2563a8",
     "Environmental & drilling concerns":"#0f766e",
+    "Data centers":"#db2777",
     "Public safety":"#b91c1c",
     "Zoning & development":"#b45309",
     "Other":"#475569"

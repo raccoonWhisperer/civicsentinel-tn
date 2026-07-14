@@ -29,9 +29,11 @@
   --navy-800:#0d2438;
   --navy-900:#081a2b;
   --navy-050:#eaf0f6;
-  --teal:#0e7c7b;        /* action accent (CTAs, links-of-action) */
+  --teal:#0e7c7b;        /* secondary accent (links-of-action, icons) */
   --teal-700:#0a5f5e;
   --teal-050:#e4f1f0;
+  --cta:#1f8f4d;         /* primary "Report an issue" CTA — green */
+  --cta-700:#166b39;
   --gold:#b0842f;        /* rare warm accent for eyebrows */
   --ink:#1b2a38;
   --ink-soft:#54637a;
@@ -84,12 +86,23 @@ img{max-width:100%;display:block}
 .btn:hover{text-decoration:none;transform:translateY(-1px)}
 .btn--primary{background:var(--teal);color:#fff;box-shadow:0 6px 18px rgba(14,124,123,.28)}
 .btn--primary:hover{background:var(--teal-700)}
+/* The single distinct call-to-action: "Report an issue" is green so it stands out. */
+.btn--report{background:var(--cta);color:#fff;box-shadow:0 6px 18px rgba(31,143,77,.30)}
+.btn--report:hover{background:var(--cta-700)}
 .btn--dark{background:var(--navy);color:#fff}
 .btn--dark:hover{background:var(--navy-800)}
 .btn--ghost{background:transparent;color:var(--navy);border-color:#c9d2dc}
 .btn--ghost:hover{background:var(--navy-050);border-color:var(--navy)}
 .btn--sm{padding:9px 16px;font-size:.9rem;border-radius:7px}
 .btn--block{width:100%;justify-content:center}
+
+/* Hover feedback on every selectable control */
+select,.layer,.hero__dots button,.langtoggle button{transition:background .15s ease,border-color .15s ease,color .15s ease}
+select:hover,input:hover:not([type=file]){border-color:var(--teal)}
+.layer:hover{background:#fff;border-radius:8px}
+.hero__dots button:hover{background:rgba(255,255,255,.6)}
+.langtoggle button:hover{color:#fff}
+.issue-card:hover,.log-row:hover{border-color:var(--teal)}
 
 /* ---- Utility bar ---- */
 .utility{background:var(--navy-900);color:#aeb9c7;font-size:.82rem;letter-spacing:.01em}
@@ -361,7 +374,7 @@ footer.site .brand .bt{color:#fff}
     </ul>
     <div class="nav-cta">
       <button class="btn btn--ghost btn--sm" data-open="track" data-i18n="cta.track">Track an issue</button>
-      <button class="btn btn--primary btn--sm" data-open="report" data-i18n="cta.report">Report an issue</button>
+      <button class="btn btn--report btn--sm" data-open="report" data-i18n="cta.report">Report an issue</button>
     </div>
   </div>
 </header>
@@ -402,7 +415,7 @@ footer.site .brand .bt{color:#fff}
       <h1 data-hero="title">See it. Log it. Track it to resolution.</h1>
       <p class="hero__tag" data-hero="tag">An independent, transparent record of community issues in Rutherford County — reported by residents, followed publicly from the moment each is acknowledged to the day it is resolved.</p>
       <div class="hero__cta">
-        <button class="btn btn--primary" data-open="report" data-i18n="cta.report">Report an issue</button>
+        <button class="btn btn--report" data-open="report" data-i18n="cta.report">Report an issue</button>
         <button class="btn btn--ghost" data-open="track" data-i18n="cta.track">Track an issue</button>
       </div>
       <div class="hero__dots" role="tablist" aria-label="Highlights">
@@ -510,7 +523,7 @@ footer.site .brand .bt{color:#fff}
         <label class="layer"><input type="checkbox" data-layer="wells" checked><span><strong><span class="legend-dot" style="background:#0e7c7b"></span>TDEC wells</strong><span class="lg" data-i18n="map.l.wells.d">Registered water wells — linked to logs</span></span></label>
         <label class="layer"><input type="checkbox" data-layer="bounds"><span><strong data-i18n="map.l.bounds">Boundaries</strong><span class="lg" data-i18n="map.l.bounds.d">Jurisdiction &amp; commission districts</span></span></label>
         <p class="hint" style="margin-top:16px" data-i18n="map.tip">Tip: while reporting, click the map to drop your issue's location.</p>
-        <p class="hint" data-i18n="map.src">Sources: TDEC Water Resources; USGS Karst Map; Rutherford County GIS. Reference data shown for context.</p>
+        <p class="hint" data-i18n="map.src">Sources: TDEC Water Resources; USGS Karst Map; Rutherford County GIS. Only verified points are shown; full official layers are imported before launch. Marker locations are approximate.</p>
       </div>
       <div><div id="leafmap"></div></div>
     </div>
@@ -543,7 +556,6 @@ footer.site .brand .bt{color:#fff}
         <p class="eyebrow" data-i18n="log.eyebrow">Search &amp; filter</p>
         <h2 data-i18n="log.title">Public issue log</h2>
       </div>
-      <button class="btn btn--primary btn--sm" data-open="report" data-i18n="cta.report">Report an issue</button>
     </div>
     <div class="filters">
       <div class="field"><label for="f-cat" data-i18n="log.f.cat">Category</label><select id="f-cat"></select></div>
@@ -739,6 +751,10 @@ footer.site .brand .bt{color:#fff}
   </div>
   <div class="modal-body">
     <div id="reportForm">
+      <!-- Honeypot: hidden from people, tempting to bots. Never fill this. -->
+      <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden">
+        <label>Website<input id="r-hp" name="website" type="text" tabindex="-1" autocomplete="off"></label>
+      </div>
       <div class="steps">
         <span class="step-pill active" data-step="1" data-i18n="report.s1">1 · What</span>
         <span class="step-pill" data-step="2" data-i18n="report.s2">2 · Where</span>

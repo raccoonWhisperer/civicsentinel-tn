@@ -98,9 +98,14 @@ function renderPublished(list, events){
       <details><summary class="count">Timeline (${eventsFor(i.id,events).length})</summary><ul class="tl">${tl}</ul></details>
       <div class="grid2" style="margin-top:10px">
         <div><label>Advance to stage</label><select data-stage="${i.id}">${opts}</select></div>
-        <div><label>Assigned to (optional)</label><input data-assigned="${i.id}" value="${esc(i.assigned_to||'')}"></div>
+        <div><label>Who acted (attribution)</label><input data-actor="${i.id}" placeholder="e.g. Civic Sentinel, or 'County Highway Dept'"></div>
       </div>
-      <div style="margin-top:10px"><label>Note (what changed / who acted)</label><textarea data-note="${i.id}" placeholder="e.g. Field inspection completed; scheduled remediation."></textarea></div>
+      <div class="grid2" style="margin-top:10px">
+        <div><label>Assigned to (optional)</label><input data-assigned="${i.id}" value="${esc(i.assigned_to||'')}"></div>
+        <div></div>
+      </div>
+      <div style="margin-top:10px"><label>Note (what changed)</label><textarea data-note="${i.id}" placeholder="Describe exactly what happened."></textarea></div>
+      <p class="count" style="color:#a86a10;margin:6px 0 0">Integrity rule: only attribute a step to a government office if it actually happened and you can cite a public document. Otherwise attribute it to Civic Sentinel. Every entry is permanent and public.</p>
       <div data-reswrap="${i.id}" class="hidden" style="margin-top:10px"><label>Resolution summary (shown publicly when Resolved)</label><textarea data-res="${i.id}"></textarea></div>
       <div class="row" style="margin-top:10px"><button class="btn btn--primary btn--sm" data-advance="${i.id}">Save update</button></div>
     </div>`;
@@ -124,9 +129,10 @@ document.addEventListener('click', async (e)=>{
       const stage = document.querySelector(`[data-stage="${ad}"]`).value;
       const note = document.querySelector(`[data-note="${ad}"]`).value.trim();
       const assigned = document.querySelector(`[data-assigned="${ad}"]`).value.trim();
+      const actor = document.querySelector(`[data-actor="${ad}"]`)?.value.trim() || '';
       const res = document.querySelector(`[data-res="${ad}"]`)?.value.trim() || '';
       t.disabled=true;
-      await api('advance',{ id:ad, stage, note, assigned_to:assigned, resolution_summary: stage==='Resolved'?res:undefined });
+      await api('advance',{ id:ad, stage, note, actor, assigned_to:assigned, resolution_summary: stage==='Resolved'?res:undefined });
       notice('Update saved and appended to the timeline.','ok'); return loadQueue();
     }
   }catch(err){ notice('Action failed: '+err.message,'err'); if(t) t.disabled=false; }

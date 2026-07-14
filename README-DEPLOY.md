@@ -124,6 +124,22 @@ Run this checklist on the live domain:
 
 ---
 
+## Spam defense (already built)
+Public submissions pass three gates before they can reach the queue:
+1. **Cloudflare Turnstile** — the "I'm human" check, verified server-side in `/api/report`.
+2. **Honeypot** — a hidden form field bots fill and people never see; filled = silently dropped.
+3. **Per-IP rate limit** — max 5 reports per IP per 10 minutes (a salted IP *hash* only, no raw IP
+   stored; tune `RATE_WINDOW_MIN` / `RATE_MAX` in `api/report.js`, salt via the `RATE_SALT` env var).
+
+## Monitoring & the maintenance dashboard
+- **`/dashboard.html`** — an operator (auth-gated, noindexed) maintenance dashboard: KPI cards
+  (total / pending / published / resolved / median days / subscribers), breakdowns by lifecycle stage
+  and category, a **system-status panel** (database reachable? spam protection on? last submission?),
+  and a recent-activity feed. Reachable from the console's top nav.
+- **`/api/health`** — a public, no-PII status probe returning `{ ok, db, spam, time }`. Point an
+  uptime monitor at it (UptimeRobot, Better Uptime, Pingdom) for true up/down history and alerts.
+  For traffic analytics, enable **Vercel Analytics** on the project (one toggle).
+
 ## Operating it
 - **The console** lives at `civicsentinel-tn.com/admin.html` (noindexed). Only allow‑listed
   operators can sign in. Add/remove operators via Supabase Users + the `admins` table.

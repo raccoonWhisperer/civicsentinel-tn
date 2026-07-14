@@ -29,6 +29,25 @@ export default async function handler(req, res) {
         return json(res, 200, { issues: issues || [], events: events || [] });
       }
 
+      case 'stats': {
+        // Aggregates for the maintenance dashboard.
+        const { data: issues } = await admin.from('issues')
+          .select('id,category,stage,moderation,created_at,resolved_at,published_at');
+        const { count: subsUpdates } = await admin.from('subscribers')
+          .select('*', { count: 'exact', head: true }).eq('kind', 'updates');
+        const { count: subsRemind } = await admin.from('subscribers')
+          .select('*', { count: 'exact', head: true }).eq('kind', 'reminders');
+        const { data: recent } = await admin.from('issue_events')
+          .select('*').order('ts', { ascending: false }).limit(15);
+        let db = true;
+        return json(res, 200, {
+          issues: issues || [],
+          subscribers: { updates: subsUpdates || 0, reminders: subsRemind || 0 },
+          recent: recent || [],
+          health: { db, spam: !!process.env.TURNSTILE_SECRET_KEY, time: now }
+        });
+      }
+
       case 'approve': {
         if (!body.id) return json(res, 422, { error: 'Missing id' });
         const { error } = await admin.from('issues')
@@ -36,7 +55,7 @@ export default async function handler(req, res) {
         if (error) throw error;
         await admin.from('issue_events').insert({
           issue_id: body.id, stage: 'Acknowledged',
-          note: 'Reviewed and published to the public record.', actor: who, ts: now
+          note: 'Received and published to the public record by Civic Sentinel.', actor: 'Civic Sentinel (' + who + ')', ts: now
         });
         // If still at Submitted, move to Acknowledged on publish.
         await admin.from('issues').update({ stage: 'Acknowledged' })
@@ -66,7 +85,7 @@ export default async function handler(req, res) {
         await admin.from('issue_events').insert({
           issue_id: id, stage,
           note: (note || '').trim() || `Advanced to ${stage}.`,
-          actor: (body.actor || '').trim() || who, ts: now
+          actor: (body.actor || '').trim() || ('Civic Sentinel (' + who + ')'), ts: now
         });
         return json(res, 200, { ok: true });
       }

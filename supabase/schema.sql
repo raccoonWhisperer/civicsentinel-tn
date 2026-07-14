@@ -96,6 +96,17 @@ create table if not exists public.subscribers (
   unique (email, kind)
 );
 
+-- ---- rate limiting (spam defense) -----------------------------------
+-- Stores a salted hash of the submitter IP + timestamp so /api/report can
+-- cap how many reports one source can file in a short window. No raw IP,
+-- no PII. Rows are disposable; prune old ones periodically.
+create table if not exists public.submission_rate (
+  id       bigint generated always as identity primary key,
+  ip_hash  text not null,
+  ts       timestamptz not null default now()
+);
+create index if not exists submission_rate_idx on public.submission_rate (ip_hash, ts);
+
 -- ---- admin allow-list ------------------------------------------------
 create table if not exists public.admins (
   user_id    uuid primary key references auth.users(id) on delete cascade,
@@ -110,6 +121,7 @@ alter table public.issues        enable row level security;
 alter table public.issue_events  enable row level security;
 alter table public.issue_sources enable row level security;
 alter table public.subscribers   enable row level security;
+alter table public.submission_rate enable row level security;
 alter table public.admins        enable row level security;
 
 -- Public read: only published & not rejected.
@@ -167,28 +179,28 @@ create policy issue_photos_public_read on storage.objects
   for select using (bucket_id = 'issue-photos');
 
 -- =====================================================================
--- SEED (optional) — a few published records so the site isn't empty on
--- first deploy. Delete this block if you want to start clean.
+-- SEED — VERIFIED, DOCUMENTED RECORDS ONLY.
+-- Everything here is either a resident-reported concern or a reference to a
+-- real public document. No government "action" is asserted unless it is
+-- cited to a public record. Actor "Civic Sentinel (independent intake)"
+-- means THIS project logged it — not that any government office acted.
+-- Add real issues as they are verified; delete this block to start empty.
 -- =====================================================================
 insert into public.issues (id,category,title,description,lat,lng,address,stage,moderation,assigned_to,resolution_summary,created_at,resolved_at,published_at) values
- ('CS-2025-0087','Environmental & drilling concerns','Geothermal drilling proposed at Poplar Hill school site','A new high school is proposed on karst terrain at the Dismukes farm. Residents are asking for a site-specific geophysical survey before any geothermal wells are drilled, given a documented failure at a nearby elementary school.',35.9037,-86.5216,'Poplar Hill Rd, Rutherford County','Under review','published','County Public Works — Geotech review',null,'2025-08-14',null,'2025-08-19'),
- ('CS-2025-0091','Water, drainage & karst/sinkhole hazards','New depression opening in field off Poplar Hill Rd','A shallow bowl-shaped depression appeared and has widened over two weeks after heavy rain, roughly 40 yards from the property line of the proposed site.',35.9059,-86.5231,'Field off Poplar Hill Rd','Action assigned','published','County Engineer — field inspection',null,'2025-09-02',null,'2025-09-04'),
- ('CS-2024-0203','Infrastructure & roads','Roadbed slumping on Franklin Rd shoulder','A section of shoulder had begun to slump and crack, widening after rain. Reported as a possible subsurface void under the roadbed.',35.8934,-86.5122,'Franklin Rd shoulder','Resolved','published','County Highway Dept','Void grouted and shoulder rebuilt; monitored for 60 days with no recurrence.','2024-10-05','2024-12-01','2024-10-07')
+ ('CS-2025-001','Environmental & drilling concerns','Proposed geothermal drilling at the Poplar Hill school site','Residents have asked the county to require a site-specific geophysical survey and an independent geotechnical assessment before any geothermal wells are drilled at the proposed Poplar Hill school site, which sits on karst terrain. The request cites a documented geothermal-drilling failure at a nearby elementary school that damaged a neighboring home and drew a state regulatory violation. Location shown is approximate.',35.9037,-86.5216,'Near Poplar Hill Rd, Rutherford County (approximate)','Acknowledged','published',null,null,'2025-08-14',null,'2025-08-19'),
+ ('CS-2025-002','Water, drainage & karst/sinkhole hazards','TDEC well log #20250267 records open voids near the proposed site','A resident flagged the official TDEC well log for registered well #20250267, which records open voids at roughly 120-121 ft and 250-251 ft — the kind of cavities that make un-surveyed drilling on karst risky. Logged as supporting evidence for the geological-testing request. Location approximate.',35.9051,-86.5189,'Near the proposed Poplar Hill site (approximate)','Acknowledged','published',null,null,'2025-09-21',null,'2025-09-24')
 on conflict (id) do nothing;
 
 insert into public.issue_events (issue_id,stage,note,actor,ts) values
- ('CS-2025-0087','Submitted','Filed by resident coalition with EFI Global report attached.','Resident','2025-08-14'),
- ('CS-2025-0087','Acknowledged','Logged and routed to Public Works.','Civic Sentinel intake','2025-08-19'),
- ('CS-2025-0087','Under review','Geotech review opened; TDEC Notice of Violation (Sept 5) added to the file.','County Public Works','2025-09-08'),
- ('CS-2025-0091','Submitted','Photos of the depression uploaded.','Resident','2025-09-02'),
- ('CS-2025-0091','Acknowledged','Received; cross-referenced with USGS karst layer.','Civic Sentinel intake','2025-09-04'),
- ('CS-2025-0091','Action assigned','Field inspection scheduled; area flagged for monitoring.','County Engineer','2025-09-16'),
- ('CS-2024-0203','Submitted','Cracking shoulder reported.','Resident','2024-10-05'),
- ('CS-2024-0203','Resolved','Repair completed; 60-day monitoring clear.','County Highway Dept','2024-12-01');
+ ('CS-2025-001','Submitted','Reported by residents requesting geological testing before any drilling.','Resident','2025-08-14'),
+ ('CS-2025-001','Acknowledged','Received and logged to the public record by Civic Sentinel. Supporting documents attached. No government action is recorded here unless it is cited to a public document.','Civic Sentinel (independent intake)','2025-08-19'),
+ ('CS-2025-002','Submitted','Public TDEC well log cited by a resident as supporting evidence.','Resident','2025-09-21'),
+ ('CS-2025-002','Acknowledged','Verified against the official TDEC record and logged.','Civic Sentinel (independent intake)','2025-09-24');
 
 insert into public.issue_sources (issue_id,label,url) values
- ('CS-2025-0087','EFI Global engineering assessment','https://www.efiglobal.com/'),
- ('CS-2025-0087','TDEC Notice of Violation (Sept 5, 2025)','https://www.tn.gov/environment.html');
+ ('CS-2025-001','EFI Global engineering assessment','https://www.efiglobal.com/'),
+ ('CS-2025-001','TDEC Notice of Violation (Sept 5, 2025)','https://www.tn.gov/environment.html'),
+ ('CS-2025-002','TDEC well log #20250267 (TDEC Water Resources)','https://www.tn.gov/environment/program-areas/wr-water-resources.html');
 
 -- =====================================================================
 -- AFTER RUNNING: create your first admin.

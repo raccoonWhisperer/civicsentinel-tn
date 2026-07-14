@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Civic Sentinel — Maintenance Dashboard</title>
+<meta name="robots" content="noindex,nofollow" />
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@500;600;700&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#12314e;--navy-900:#081a2b;--teal:#0e7c7b;--teal-700:#0a5f5e;--cream:#f7f4ee;--ink:#1b2a38;--ink-soft:#54637a;--line:#dfe5ec;
+--amber:#a86a10;--amber-bg:#fbf1df;--blue:#245ea0;--blue-bg:#e6eefa;--green:#1c7146;--green-bg:#e4f3ea;--red:#b42318;--red-bg:#fde7e7;--grey:#5b6675;--grey-bg:#eceff3;
+--serif:'Spectral',Georgia,serif;--sans:'Public Sans',system-ui,sans-serif;}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);background:var(--cream);color:var(--ink);font-size:15px;line-height:1.5}
+h1,h2,h3{font-family:var(--serif);color:var(--navy);margin:0 0 .4em}
+a{color:var(--teal-700)}
+.top{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.top .b{font-family:var(--serif);font-weight:700;font-size:1.15rem}
+.top .b small{display:block;font-family:var(--sans);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:#9fb0c4}
+.top a{color:#c2ccd9;margin-left:14px}.top a:hover{color:#fff}
+.wrap{max-width:1150px;margin:0 auto;padding:24px 22px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:18px;box-shadow:0 1px 2px rgba(9,26,43,.05)}
+label{font-weight:600;font-size:.85rem;display:block;margin-bottom:6px}
+input{width:100%;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px}
+.btn{font:inherit;font-weight:600;border:2px solid transparent;border-radius:8px;padding:9px 16px;cursor:pointer;background:var(--teal);color:#fff}
+.btn:hover{background:var(--teal-700)}
+.btn--ghost{background:#fff;border-color:var(--line);color:var(--navy)}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(9,26,43,.05)}
+.kpi .n{font-family:var(--serif);font-size:2rem;font-weight:700;color:var(--navy);line-height:1}
+.kpi .l{font-size:.78rem;color:var(--ink-soft);margin-top:6px;letter-spacing:.02em}
+.kpi.alert .n{color:var(--amber)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.status{display:flex;flex-wrap:wrap;gap:22px}
+.stat-item{display:flex;align-items:center;gap:9px;font-weight:600}
+.dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+.dot.g{background:var(--green)}.dot.r{background:var(--red)}.dot.a{background:var(--amber)}.dot.gr{background:var(--grey)}
+.bar-row{display:grid;grid-template-columns:150px 1fr 44px;align-items:center;gap:10px;margin:7px 0}
+.bar-row .lab{font-size:.85rem;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:16px;border-radius:5px;background:var(--teal);min-width:2px}
+.bar-row .v{font-size:.85rem;font-weight:700;text-align:right}
+.st-open .bar{background:var(--amber)}.st-prog .bar{background:var(--blue)}.st-done .bar{background:var(--green)}.st-closed .bar{background:var(--grey)}
+.feed{list-style:none;margin:0;padding:0;font-size:.86rem;max-height:340px;overflow:auto}
+.feed li{padding:9px 0;border-bottom:1px solid var(--line)}
+.feed li:last-child{border:0}
+.feed .mono{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;color:var(--ink-soft)}
+.count{font-size:.82rem;color:var(--ink-soft)}
+.notice{padding:10px 14px;border-radius:8px;font-size:.86rem;margin-bottom:14px}
+.notice.demo{background:var(--amber-bg);color:var(--amber);border:1px solid #e8cf9a}
+.notice.err{background:var(--red-bg);color:var(--red)}
+.hidden{display:none}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+h2 .count{font-weight:400}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:560px){.kpis{grid-template-columns:repeat(2,1fr)}.bar-row{grid-template-columns:110px 1fr 40px}}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="b">Civic Sentinel<small>Maintenance Dashboard</small></div>
+  <div class="row"><a href="index.html">Public site</a><a href="admin.html">Moderation console</a><button id="logout" class="btn btn--ghost hidden" style="padding:6px 12px;font-size:.85rem">Log out</button></div>
+</div>
+<div class="wrap">
+  <div id="notice"></div>
+
+  <div id="loginCard" class="card" style="max-width:420px;margin:40px auto">
+    <h2>Operator sign-in</h2>
+    <p class="count">The dashboard reads live data. Sign in as an allow-listed operator.</p>
+    <div style="margin:14px 0"><label for="email">Email</label><input id="email" type="email" autocomplete="username"></div>
+    <div style="margin:14px 0"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <button id="login" class="btn" style="width:100%">Sign in</button>
+  </div>
+
+  <div id="board" class="hidden">
+    <div class="row" style="justify-content:space-between;margin-bottom:6px">
+      <h2 style="margin:0">Overview <span class="count" id="asof"></span></h2>
+      <button id="refresh" class="btn btn--ghost" style="padding:6px 12px;font-size:.85rem">Refresh</button>
+    </div>
+
+    <div class="card">
+      <h3>System status</h3>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="kpis" id="kpis" style="margin-bottom:18px"></div>
+
+    <div class="grid2">
+      <div class="card"><h3>By lifecycle stage</h3><div id="byStage"></div></div>
+      <div class="card"><h3>By category</h3><div id="byCat"></div></div>
+    </div>
+
+    <div class="card">
+      <h3>Recent activity <span class="count">(latest timeline entries)</span></h3>
+      <ul class="feed" id="feed"></ul>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
