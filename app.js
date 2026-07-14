@@ -417,16 +417,10 @@ function renderUpdates(){
     <h3 style="margin:4px 0 6px">${u.t[currentLang]||u.t.en}</h3><p style="margin:0">${u.b[currentLang]||u.b.en}</p></div>`).join("");
 }
 function renderShare(){
-  const url = "https://beforewebuildagain.com/";
-  const msg = currentLang==="es" ? "Verlo. Registrarlo. Rastrearlo hasta resolverlo." : "See it. Log it. Track it to resolution.";
-  const enc = encodeURIComponent, u = enc(url), m = enc(msg);
-  const links = [
-    ["X",`https://twitter.com/intent/tweet?url=${u}&text=${m}`],
-    ["Nextdoor",`https://nextdoor.com/sharekit/?source=${u}`],
-    ["WhatsApp",`https://wa.me/?text=${m}%20${u}`],
-    ["Text",`sms:?&body=${m}%20${u}`]
-  ];
-  $("#shareRow").innerHTML = links.map(([n,h])=>`<a href="${h}" target="_blank" rel="noopener">${n}</a>`).join("");
+  // Social sharing removed until official Civic Sentinel accounts are set up.
+  const row = $("#shareRow"); if(!row) return;
+  const h = row.previousElementSibling; if(h && h.tagName==="H3") h.remove();
+  row.remove();
 }
 
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -464,10 +458,7 @@ async function openDetail(id){
     ${sources}
     <h4 style="margin-top:20px">${L("detail.timeline","Issue lifecycle timeline")}</h4>
     <p class="hint">${currentLang==="es"?"Registro transparente y solo-añadir: ninguna entrada se edita ni se borra. Las entradas marcadas «Civic Sentinel» son registro independiente de este proyecto; las acciones de una oficina gubernamental solo aparecen cuando se citan a un documento público.":"Transparent, append-only trail — no entry is edited or deleted. Entries marked “Civic Sentinel” are independent intake by this project; a government office's action appears only when it is cited to a public document."}</p>
-    ${timeline}
-    <div class="share" style="margin-top:16px">
-      <a href="https://twitter.com/intent/tweet?url=${shareUrl}" target="_blank" rel="noopener">X</a>
-    </div>`;
+    ${timeline}`;
   showDialog("#dlg-detail");
 }
 
@@ -495,8 +486,7 @@ async function initMainMap(){
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"© OpenStreetMap"}).addTo(mainMap);
   mainMap.on("click",()=>mainMap.scrollWheelZoom.enable());
 
-  // proposed site
-  L.marker([SITE.lat,SITE.lng],{icon:star()}).addTo(mainMap).bindPopup(`<h4>★ ${SITE.label}</h4><p class="hint">The parcel at the center of the Poplar Hill review.</p>`);
+  // (proposed-site star removed — no marker placed on the map center)
 
   layerGroups.issues = L.layerGroup().addTo(mainMap);
   layerGroups.sink   = L.layerGroup().addTo(mainMap);
