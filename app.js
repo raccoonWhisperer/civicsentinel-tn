@@ -421,11 +421,9 @@ function renderShare(){
   const msg = currentLang==="es" ? "Verlo. Registrarlo. Rastrearlo hasta resolverlo." : "See it. Log it. Track it to resolution.";
   const enc = encodeURIComponent, u = enc(url), m = enc(msg);
   const links = [
-    ["Facebook",`https://www.facebook.com/sharer/sharer.php?u=${u}`],
     ["X",`https://twitter.com/intent/tweet?url=${u}&text=${m}`],
     ["Nextdoor",`https://nextdoor.com/sharekit/?source=${u}`],
     ["WhatsApp",`https://wa.me/?text=${m}%20${u}`],
-    ["Email",`mailto:?subject=${m}&body=${u}`],
     ["Text",`sms:?&body=${m}%20${u}`]
   ];
   $("#shareRow").innerHTML = links.map(([n,h])=>`<a href="${h}" target="_blank" rel="noopener">${n}</a>`).join("");
@@ -468,9 +466,7 @@ async function openDetail(id){
     <p class="hint">${currentLang==="es"?"Registro transparente y solo-añadir: ninguna entrada se edita ni se borra. Las entradas marcadas «Civic Sentinel» son registro independiente de este proyecto; las acciones de una oficina gubernamental solo aparecen cuando se citan a un documento público.":"Transparent, append-only trail — no entry is edited or deleted. Entries marked “Civic Sentinel” are independent intake by this project; a government office's action appears only when it is cited to a public document."}</p>
     ${timeline}
     <div class="share" style="margin-top:16px">
-      <a href="https://www.facebook.com/sharer/sharer.php?u=${shareUrl}" target="_blank" rel="noopener">Facebook</a>
       <a href="https://twitter.com/intent/tweet?url=${shareUrl}" target="_blank" rel="noopener">X</a>
-      <a href="mailto:?body=${shareUrl}" target="_blank" rel="noopener">Email</a>
     </div>`;
   showDialog("#dlg-detail");
 }
