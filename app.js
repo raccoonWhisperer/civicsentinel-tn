@@ -48,13 +48,21 @@ const SITE = { lat: 35.9037, lng: -86.5216, label: "Proposed school site (Dismuk
    rather than populated with unverified points. Coordinates are approximate.
    ------------------------------------------------------------------------- */
 const WELLS = [
-  { id:"20250267", lat:35.9051, lng:-86.5189, depth:"per TDEC log", voids:"Open voids logged at ~120–121 ft and ~250–251 ft", source:"https://www.tn.gov/environment/program-areas/wr-water-resources.html", label:"TDEC registered well #20250267 (location approximate)" }
+  {s:"354957086283200",n:"Ru:J-059",la:35.832566,lo:-86.475548,d:"250"},
+  {s:"355032086280400",n:"Ru:J-057",la:35.842288,lo:-86.46777,d:"175"},
+  {s:"355102086265801",n:"RU:J-16",la:35.850621,lo:-86.449437,d:"355"},
+  {s:"355146086253601",n:"RU:J-062",la:35.862843,lo:-86.426659,d:"40"},
+  {s:"355151086254301",n:"RU:J-060",la:35.864408,lo:-86.428747,d:"106"},
+  {s:"355152086254401",n:"RU:J-061",la:35.864408,lo:-86.428886,d:""},
+  {s:"355208086280401",n:"Ru:J-012",la:35.868954,lo:-86.46777,d:"150"},
+  {s:"355257086262601",n:"RU:O-062",la:35.882565,lo:-86.44277,d:"150"},
+  {s:"355311086262101",n:"RU:O-074",la:35.886442,lo:-86.439131,d:""},
+  {s:"355312086320701",n:"RU:N-29",la:35.886731,lo:-86.535271,d:"55"},
+  {s:"355552086254401",n:"RU:O-068",la:35.931156,lo:-86.428842,d:"120"},
+  {s:"355619086260001",n:"RU:O-21",la:35.938675,lo:-86.433326,d:"31"},
+  {s:"355640086271600",n:"RU:O-4",la:35.944508,lo:-86.454437,d:""},
+  {s:"355815086280400",n:"Ru:O-060",la:35.970897,lo:-86.46777,d:"175"}
 ];
-// USGS sinkhole layer: to be imported from the official USGS karst dataset.
-// Left empty on purpose — no invented points.
-const SINKS = [];
-// Illustrative outline only — replace with the county GIS boundary before launch.
-const BOUNDS = [[35.885,-86.545],[35.885,-86.500],[35.920,-86.500],[35.920,-86.545]];
 
 /* -------------------------------------------------------------------------
    SEED DATA — VERIFIED, DOCUMENTED RECORDS ONLY. Mirrors supabase/schema.sql.
@@ -482,34 +490,24 @@ function star(){ return L.divIcon({className:"", html:`<div style="font-size:26p
 
 async function initMainMap(){
   if(!window.L){ return; }
-  mainMap = L.map("leafmap",{scrollWheelZoom:false}).setView([SITE.lat, SITE.lng], 14);
+  mainMap = L.map("leafmap",{scrollWheelZoom:true}).setView([35.84,-86.42], 10);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19, attribution:"© OpenStreetMap"}).addTo(mainMap);
-  mainMap.on("click",()=>mainMap.scrollWheelZoom.enable());
 
-  // (proposed-site star removed — no marker placed on the map center)
+  layerGroups.commission  = L.layerGroup().addTo(mainMap);
+  layerGroups.schoolboard = L.layerGroup();
+  layerGroups.wells       = L.layerGroup().addTo(mainMap);
 
-  layerGroups.issues = L.layerGroup().addTo(mainMap);
-  layerGroups.sink   = L.layerGroup().addTo(mainMap);
-  layerGroups.wells  = L.layerGroup().addTo(mainMap);
-  layerGroups.bounds = L.layerGroup();
-
-  const issues = await API.list();
-  issues.forEach(i=>{
-    L.marker([i.location.lat,i.location.lng],{icon:dot(catColor(i.category))})
-     .addTo(layerGroups.issues)
-     .bindPopup(`<h4>${esc(i.title)}</h4><p>${badge(i.stage)}<br><span class="hint">${catLabel(i.category)}</span></p><p><a href="#" onclick="openDetail('${i.id}');return false;">View full timeline →</a></p>`);
-  });
-  SINKS.forEach(s=>{
-    L.circleMarker([s.lat,s.lng],{radius:8,color:"#b45309",fillColor:"#f59e0b",fillOpacity:.75,weight:2})
-     .addTo(layerGroups.sink)
-     .bindPopup(`<h4>${s.label}</h4><p>${s.size}</p><p><a href="${s.source}" target="_blank" rel="noopener">USGS source ↗</a></p>`);
-  });
+  // Verified USGS/TDEC groundwater wells (USGS NWIS).
   WELLS.forEach(w=>{
-    L.circleMarker([w.lat,w.lng],{radius:7,color:"#0e7490",fillColor:"#22d3ee",fillOpacity:.8,weight:2})
+    L.circleMarker([w.la,w.lo],{radius:6,color:"#0e7490",fillColor:"#22d3ee",fillOpacity:.85,weight:2})
      .addTo(layerGroups.wells)
-     .bindPopup(`<h4>${w.label}</h4><p>Depth: ${w.depth}<br>${w.voids}</p><p><a href="${w.source}" target="_blank" rel="noopener">TDEC well log ↗</a></p>`);
+     .bindPopup(`<h4>USGS well ${esc(w.n)}</h4><p class="hint">Site ${w.s}${w.d?` · reported depth ${esc(w.d)} ft`:""}</p><p><a href="https://waterdata.usgs.gov/monitoring-location/${w.s}/" target="_blank" rel="noopener">USGS NWIS record ↗</a></p>`);
   });
-  L.polygon(BOUNDS,{color:"#1F3A5F",weight:2,dashArray:"6 5",fill:false}).addTo(layerGroups.bounds);
+
+  // Rutherford County electoral boundaries — loaded live from the county GIS.
+  const COGIS = "https://services.arcgis.com/36I6IHIdr660pAyH/arcgis/rest/services";
+  loadDistrictLayer(layerGroups.commission,  `${COGIS}/Commission2020/FeatureServer/0`,  "#7c3aed", "Commission District", true);
+  loadDistrictLayer(layerGroups.schoolboard, `${COGIS}/SchoolBoardZones/FeatureServer/0`, "#b45309", "School Board Zone", false);
 
   // layer toggles
   $$('[data-layer]').forEach(cb=>{
@@ -522,6 +520,25 @@ async function initMainMap(){
   $("#mapSearchBtn").addEventListener("click", ()=>geocode($("#mapSearch").value, mainMap));
   $("#mapSearch").addEventListener("keydown", e=>{ if(e.key==="Enter") geocode($("#mapSearch").value, mainMap); });
   setTimeout(()=>mainMap.invalidateSize(),200);
+}
+
+// Load a Rutherford County district/zone polygon layer (GeoJSON) from the county GIS.
+async function loadDistrictLayer(group, url, color, labelPrefix, fitTo){
+  try{
+    const r = await fetch(url + "/query?where=1%3D1&outFields=DISTRICT,NAME&outSR=4326&f=geojson");
+    const gj = await r.json();
+    const gl = L.geoJSON(gj, {
+      style:{ color:color, weight:2, fillColor:color, fillOpacity:0.07 },
+      onEachFeature:(f,lyr)=>{
+        const p = f.properties||{};
+        const d = (p.DISTRICT!=null && p.DISTRICT!=="") ? p.DISTRICT : p.NAME;
+        lyr.bindPopup(`<h4>${labelPrefix} ${d!=null?esc(String(d)):""}</h4>`);
+        if(d!=null && d!=="") lyr.bindTooltip(String(d), {permanent:true, direction:"center", className:"dist-lbl"});
+      }
+    });
+    gl.addTo(group);
+    if(fitTo && mainMap && gl.getBounds().isValid()) mainMap.fitBounds(gl.getBounds().pad(0.03));
+  }catch(e){ /* county GIS unavailable — layer stays empty; map still works */ }
 }
 
 // Simple geocode via Nominatim (best-effort; degrades gracefully offline).
