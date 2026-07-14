@@ -197,6 +197,7 @@ header.site{position:sticky;top:0;z-index:1000;background:rgba(255,255,255,.97);
 .layer input{margin-top:5px;accent-color:var(--teal)}
 .layer .lg{font-size:.81rem;color:var(--ink-soft);display:block}
 .legend-dot{width:12px;height:12px;border-radius:50%;display:inline-block;vertical-align:-1px;margin-right:5px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.dist-lbl{background:none;border:none;box-shadow:none;color:#1F3A5F;font-weight:700;font-size:11px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff}
 #leafmap{height:580px;width:100%;background:#e9eef2}
 .map-search{display:flex;gap:8px;margin-bottom:16px}
 .map-search input{flex:1;min-width:0}
@@ -518,12 +519,11 @@ footer.site .brand .bt{color:#fff}
           <button class="btn btn--primary btn--sm" id="mapSearchBtn" data-i18n="map.go">Go</button>
         </div>
         <h3 data-i18n="map.layers">Map layers</h3>
-        <label class="layer"><input type="checkbox" data-layer="issues" checked><span><strong data-i18n="map.l.issues">Reported issues</strong><span class="lg" data-i18n="map.l.issues.d">By category &amp; current status</span></span></label>
-        <label class="layer"><input type="checkbox" data-layer="sink" checked><span><strong><span class="legend-dot" style="background:#d97706"></span>USGS sinkholes</strong><span class="lg" data-i18n="map.l.sink.d">Documented sinkholes &amp; depressions</span></span></label>
-        <label class="layer"><input type="checkbox" data-layer="wells" checked><span><strong><span class="legend-dot" style="background:#0e7c7b"></span>TDEC wells</strong><span class="lg" data-i18n="map.l.wells.d">Registered water wells — linked to logs</span></span></label>
-        <label class="layer"><input type="checkbox" data-layer="bounds"><span><strong data-i18n="map.l.bounds">Boundaries</strong><span class="lg" data-i18n="map.l.bounds.d">Jurisdiction &amp; commission districts</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="commission" checked><span><strong><span class="legend-dot" style="background:#7c3aed"></span>Commissioner districts</strong><span class="lg">21 county commission districts (2020)</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="schoolboard"><span><strong><span class="legend-dot" style="background:#b45309"></span>School board zones</strong><span class="lg">7 Board of Education zones</span></span></label>
+        <label class="layer"><input type="checkbox" data-layer="wells" checked><span><strong><span class="legend-dot" style="background:#0e7c7b"></span>Water wells (USGS)</strong><span class="lg">USGS NWIS groundwater wells</span></span></label>
         <p class="hint" style="margin-top:16px" data-i18n="map.tip">Tip: while reporting, click the map to drop your issue's location.</p>
-        <p class="hint" data-i18n="map.src">Sources: TDEC Water Resources; USGS Karst Map; Rutherford County GIS. Only verified points are shown; full official layers are imported before launch. Marker locations are approximate.</p>
+        <p class="hint">Sources: Rutherford County GIS (commissioner &amp; school-board boundaries); USGS National Water Information System (wells). Boundaries and wells load live from the official sources.</p>
       </div>
       <div><div id="leafmap"></div></div>
     </div>
