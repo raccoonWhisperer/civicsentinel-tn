@@ -26,6 +26,8 @@ const CATEGORIES = [
   "Other"
 ];
 const STAGES = ["Submitted","Acknowledged","Under review","Action assigned","In progress","Resolved","Closed / no action"];
+// #f-cat is populated from categories present in the data (see syncCatFilter).
+let catFilterSig = "";
 
 // Map a stage to a status "family" used for badge colors + counters.
 function stageClass(stage){
@@ -159,6 +161,7 @@ async function postJSON(url, body){
 function mapIssue(row, events, sources){
   return {
     id: row.id, category: row.category, title: row.title, description: row.description,
+    keywords: row.keywords || '',
     location: { lat: row.lat, lng: row.lng, address: row.address || '' },
     photos: row.photo_url ? [row.photo_url] : [],
     stage: row.stage, assigned_to: row.assigned_to,
@@ -361,9 +364,10 @@ async function renderCarousel(){
 async function renderLog(){
   const cat = $("#f-cat").value, status = $("#f-status").value, sort = $("#f-sort").value, q = $("#f-q").value.trim().toLowerCase();
   let items = await API.list();
+  syncCatFilter(items, cat);
   if(cat!=="all") items = items.filter(i=>i.category===cat);
   if(status!=="all") items = items.filter(i=>stageClass(i.stage)===status);
-  if(q) items = items.filter(i=>(i.title+" "+i.description+" "+i.location.address+" "+i.id).toLowerCase().includes(q));
+  if(q) items = items.filter(i=>(i.title+" "+i.description+" "+(i.keywords||"")+" "+i.location.address+" "+i.id).toLowerCase().includes(q));
   if(sort==="new") items.sort((a,b)=> b.created_at.localeCompare(a.created_at));
   if(sort==="old") items.sort((a,b)=> a.created_at.localeCompare(b.created_at));
   if(sort==="open") items.sort((a,b)=> openDays(b)-openDays(a));
@@ -377,6 +381,18 @@ async function renderLog(){
     </button>`).join("") || `<p class="hint">${currentLang==="es"?"Ningún caso coincide con los filtros.":"No issues match these filters."}</p>`;
 }
 function openDays(i){ return daysBetween(i.created_at, i.resolved_at || todayISO()); }
+
+function syncCatFilter(items, keep){
+  const sel = $("#f-cat"); if(!sel) return;
+  const cats = [...new Set(items.map(i=>i.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const sig = currentLang + "::" + cats.join("|");
+  if(sig === catFilterSig) return;
+  catFilterSig = sig;
+  const allLabel = currentLang==="es" ? "Todas las categorías" : "All categories";
+  sel.innerHTML = `<option value="all">${allLabel}</option>` +
+    cats.map(c=>`<option value="${c}">${esc(catLabel(c))}</option>`).join("");
+  if(keep && (keep==="all" || cats.includes(keep))) sel.value = keep;
+}
 
 async function renderCounters(){
   const m = await API.metrics();
