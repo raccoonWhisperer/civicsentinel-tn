@@ -24,11 +24,29 @@ export async function readBody(req) {
   });
 }
 
-// Cloudflare Turnstile verification. If no secret is configured, we skip
-// (useful for local/dev), but on production you should always set it.
+// Cloudflare Turnstile verification.
+//
+// FAIL-CLOSED IN PRODUCTION. The previous version returned `true` whenever no
+// secret was configured — a silent dev fallback. In production that meant the
+// public /api/report endpoint had ZERO bot protection and nothing surfaced to
+// say so: the site looked healthy while accepting unlimited automated reports
+// onto a permanent, append-only public record. On a site whose whole value is
+// the integrity of that record, a quiet skip is the worst possible default.
+//
+// Now the skip only applies outside production. If TURNSTILE_SECRET_KEY is
+// missing on a production deploy, submissions are refused outright — a loud,
+// visible failure instead of an invisible open door. /api/health reports the
+// same condition via its `spam` flag.
 export async function verifyTurnstile(token, ip) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // dev fallback
+  const isProd = process.env.VERCEL_ENV === 'production';
+  if (!secret) {
+    if (isProd) {
+      console.error('[civic-sentinel] TURNSTILE_SECRET_KEY is not set on a production deploy — rejecting submission.');
+      return false;
+    }
+    return true; // dev/preview fallback only
+  }
   if (!token) return false;
   try {
     const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {

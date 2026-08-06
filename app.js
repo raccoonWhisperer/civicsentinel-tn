@@ -184,17 +184,61 @@ function mapIssue(row, events, sources){
 }
 function readFileDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
+/* -------------------------------------------------------------------------
+   BACKEND-DOWN HANDLING.
+   Previously, if the Supabase project was unreachable, sb() threw and every
+   caller of API.list() died silently — leaving the page showing "0 issues
+   logged" and "100% public & append-only" next to an empty log. On a site
+   whose entire claim is the integrity of a public record, silently rendering
+   "0" when the truth is "we cannot reach the record" is worse than an error:
+   it reads as "nothing has ever been reported here."
+   Now a failure is caught once, announced honestly in a banner, and the
+   counters fall back to "—" rather than a fabricated zero.
+   ------------------------------------------------------------------------- */
+let BACKEND_DOWN = false;
+function announceBackendDown(){
+  if (document.getElementById('backend-down')) return;
+  const es = (typeof currentLang !== 'undefined' && currentLang === 'es');
+  const bar = document.createElement('div');
+  bar.id = 'backend-down';
+  bar.setAttribute('role', 'status');
+  bar.style.cssText = 'padding:.85rem 1rem;background:#fef3c7;color:#7c2d12;'
+    + 'border-bottom:1px solid #f59e0b;font-size:.95rem;text-align:center;line-height:1.45';
+  bar.textContent = es
+    ? 'El registro público no está disponible en este momento. Estamos trabajando para restaurarlo — los conteos y la lista de casos no se muestran hasta que vuelva la conexión.'
+    : 'The public record is temporarily unavailable. We are working to restore it — issue counts and the log are hidden until the connection is back, rather than shown as zero.';
+  const main = document.getElementById('main');
+  if (main && main.parentNode) main.parentNode.insertBefore(bar, main);
+}
+
 if (LIVE) {
+  let _cache = null;   // one fetch per page load instead of four
   API.list = async function(){
-    const [issues, events, sources] = await Promise.all([
-      sb('issues_public?select=*&order=created_at.desc'),
-      sb('issue_events?select=*&order=ts.asc'),
-      sb('issue_sources?select=*')
-    ]);
-    return issues.map(row => mapIssue(row, events, sources));
+    if (_cache) return _cache;
+    try {
+      const [issues, events, sources] = await Promise.all([
+        sb('issues_public?select=*&order=created_at.desc'),
+        sb('issue_events?select=*&order=ts.asc'),
+        sb('issue_sources?select=*')
+      ]);
+      _cache = issues.map(row => mapIssue(row, events, sources));
+      return _cache;
+    } catch (err) {
+      console.error('[civic-sentinel] public record unreachable:', err);
+      BACKEND_DOWN = true;
+      announceBackendDown();
+      return [];
+    }
   };
   API.get = async function(id){
-    const rows = await sb(`issues_public?id=eq.${encodeURIComponent(id)}&select=*`);
+    let rows;
+    try {
+      rows = await sb(`issues_public?id=eq.${encodeURIComponent(id)}&select=*`);
+    } catch (err) {
+      console.error('[civic-sentinel] lookup failed:', err);
+      BACKEND_DOWN = true; announceBackendDown();
+      return null;
+    }
     if(!rows[0]) return null;
     const [events, sources] = await Promise.all([
       sb(`issue_events?issue_id=eq.${encodeURIComponent(id)}&select=*&order=ts.asc`),
@@ -407,6 +451,14 @@ function syncCatFilter(items, keep){
 
 async function renderCounters(){
   const m = await API.metrics();
+  // If the record is unreachable we must NOT animate to 0 — that asserts
+  // "nothing reported" when the truth is "cannot reach the record".
+  if (typeof BACKEND_DOWN !== 'undefined' && BACKEND_DOWN) {
+    ["#c-logged","#c-ack","#c-resolved","#c-median"].forEach(sel=>{
+      const el = $(sel); if (el) el.textContent = "—";
+    });
+    return;
+  }
   animateTo("#c-logged", m.logged); animateTo("#c-ack", m.ack);
   animateTo("#c-resolved", m.resolved); animateTo("#c-median", m.median);
 }
