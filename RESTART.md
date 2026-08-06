@@ -32,10 +32,21 @@ same pass as the redeploy, or accept that reporting is down until you do.
 
 ## Active threads
 - Public issue-reporting + lifecycle tracking site for Rutherford County, TN.
-- Repo is now linked to Vercel (`.vercel/` present, gitignored). Still **no git remote** —
-  every deploy so far has been a CLI push from this folder, so the deployed build has never
-  been reproducible from a commit. Creating the GitHub repo is worth doing.
-- `_cleanup/` holds prod/update zips + an old build — prune once the restore is verified.
+- **Source of truth is GitHub: `raccoonWhisperer/civicsentinel-tn`, branch `main` (PUBLIC repo).**
+  This folder was, until 2026-08-06, a *divergent* snapshot with an unrelated history — taken
+  a few hours before the last GitHub pushes and never reconciled. It was missing the keyword
+  search, the category filter, the issue-log date range, the live ArcGIS boundary layers, and
+  the `Authorization: Bearer` header that newer Supabase publishable keys require. Anyone
+  deploying from the old folder state would have silently reverted all of it.
+  The folder now tracks `origin`. Do not resurrect the old history.
+- Old local history preserved on branch `backup/local-master-2026-08-06` (and `master`).
+  Safe to delete once you are satisfied nothing was lost.
+- Repo is also linked to Vercel (`.vercel/` present, gitignored).
+- `_cleanup/` holds prod/update zips + an old build — gitignored, still on disk. Prune once
+  the restore is verified.
+- Only the **anon** key has ever been committed to the public repo (verified by decoding every
+  JWT in the full history). No service-role key, no Turnstile secret. Nothing to rotate beyond
+  the dead project's own keys.
 
 ## Changes made 2026-08-06 (uncommitted → see git log)
 - **schema.sql privacy fix.** `public.issues` carries `reporter_contact` / `reporter_name`, and
@@ -57,12 +68,11 @@ same pass as the redeploy, or accept that reporting is down until you do.
   `hello@civicsentinel.example` to `contact@civicsentinel-tn.com`.
 
 ## Known gaps — not yet addressed
-- **Deployed copy overstates the map.** The live build says commissioner districts, school-board
-  zones and USGS wells "load live from the official sources". They do not: `SINKS`, `WELLS` and
-  `BOUNDS` are hardcoded arrays in `app.js`. Local `index.html` is honest about this ("full
-  official layers are imported before launch"), so redeploying from this folder fixes the claim.
-  Verify that wording survives the next deploy — on an accountability site, overstating your
-  sources is the one error you cannot afford.
+- **Map sources wording** was overstated and is now corrected. District boundaries genuinely do
+  load live from the county ArcGIS service. The USGS wells do not — they are a saved snapshot of
+  real NWIS records, each linking back to its official station page. The old copy claimed both
+  were live. On an accountability site, overstating your own sourcing is the one error you
+  cannot afford, so keep an eye on this wording.
 - Photos have no alt text; documented as a known limitation on the accessibility page.
 - No independent accessibility audit.
 - Seed issues CS-2025-001/002 in `schema.sql` are kept by Deryl's decision (2026-08-06).

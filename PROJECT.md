@@ -2,7 +2,8 @@
 
 tier: public
 path: /Users/derylduer/Workspace/civicsentinel-tn
-remote: git (local only — no GitHub remote; deploys have been CLI pushes, not commit-driven)
+remote: https://github.com/raccoonWhisperer/civicsentinel-tn (PUBLIC) — branch `main` is the source of truth
+remote_note: until 2026-08-06 this folder held an UNRELATED history and was missing real work that existed only on GitHub. Folder now tracks origin. Old history kept on backup/local-master-2026-08-06.
 vercel_project: civicsentinel-tn / prj_5ujRnD50CfTaCsIKNb5VKwipa30I (raccoonwhisperer's projects)
 live_url: https://www.civicsentinel-tn.com  (also https://civicsentinel-tn.vercel.app)
 domain_expires: 2027-06-17 (registered through Vercel)
