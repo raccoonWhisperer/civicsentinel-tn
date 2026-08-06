@@ -1,0 +1,103 @@
+/* =====================================================================
+   CIVIC SENTINEL — shared styles for the standing policy pages
+   (privacy / accessibility / terms).
+
+   index.html carries the full inline design system. These pages are plain
+   documents, so they only need the tokens plus readable prose styling —
+   duplicating the whole system would guarantee the two drift apart.
+   ===================================================================== */
+:root{
+  --navy:#12314e;
+  --navy-800:#0d2438;
+  --navy-900:#081a2b;
+  --teal:#0e7c7b;
+  --teal-700:#0a5f5e;
+  --gold:#b0842f;
+  --ink:#1b2a38;
+  --ink-soft:#54637a;
+  --cream:#f7f4ee;
+  --paper:#ffffff;
+  --line:#e4e2da;
+  --amber-bg:#fbf1df;
+  --amber:#a86a10;
+  --radius:14px;
+  --maxw:780px;
+  --serif:'Spectral',Georgia,'Times New Roman',serif;
+  --sans:'Public Sans',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;font-family:var(--sans);color:var(--ink);background:var(--paper);
+  line-height:1.65;font-size:17px;-webkit-font-smoothing:antialiased;
+}
+
+/* Keyboard users must be able to skip the masthead. */
+.skip{
+  position:absolute;left:-9999px;top:0;background:var(--navy);color:#fff;
+  padding:.75rem 1.25rem;z-index:100;text-decoration:none;
+}
+.skip:focus{left:0}
+
+header.mast{background:var(--navy);color:#fff;padding:1.1rem 1.25rem}
+header.mast .inner{max-width:var(--maxw);margin:0 auto;display:flex;
+  align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+header.mast a.brand{color:#fff;text-decoration:none;font-family:var(--serif);
+  font-size:1.3rem;font-weight:600;letter-spacing:.01em}
+header.mast .sub{color:#b9cde0;font-size:.85rem}
+header.mast a.back{color:#cfe3f5;font-size:.9rem;text-decoration:none}
+header.mast a.back:hover,header.mast a.back:focus{text-decoration:underline}
+
+main{max-width:var(--maxw);margin:0 auto;padding:2.75rem 1.25rem 4rem}
+h1{font-family:var(--serif);font-size:2.1rem;line-height:1.2;margin:0 0 .4rem;color:var(--navy-900)}
+h2{font-family:var(--serif);font-size:1.35rem;margin:2.4rem 0 .6rem;color:var(--navy-800);
+   padding-top:1.4rem;border-top:1px solid var(--line)}
+h3{font-size:1.02rem;margin:1.5rem 0 .35rem;color:var(--navy-800)}
+p,li{color:var(--ink)}
+ul,ol{padding-left:1.3rem}
+li{margin:.35rem 0}
+a{color:var(--teal-700)}
+a:hover,a:focus{color:var(--navy)}
+strong{font-weight:600}
+code{background:var(--cream);padding:.1em .35em;border-radius:4px;font-size:.9em}
+
+.updated{color:var(--ink-soft);font-size:.9rem;margin:0 0 2rem}
+
+/* Plain-language summary at the top of each page. The point of these pages
+   is that a resident can actually understand them. */
+.tldr{
+  background:var(--cream);border:1px solid var(--line);border-left:4px solid var(--gold);
+  border-radius:var(--radius);padding:1.15rem 1.35rem;margin:0 0 2rem;
+}
+.tldr h2{margin:0 0 .5rem;border:0;padding:0;font-size:1.1rem}
+.tldr p:last-child,.tldr ul:last-child{margin-bottom:0}
+
+/* Used where we must be blunt about a limitation rather than reassuring. */
+.callout{
+  background:var(--amber-bg);border:1px solid #e8c98a;border-radius:var(--radius);
+  padding:1rem 1.25rem;margin:1.4rem 0;
+}
+.callout p:first-child{margin-top:0}
+.callout p:last-child{margin-bottom:0}
+
+table{border-collapse:collapse;width:100%;margin:1.2rem 0;font-size:.95rem}
+th,td{text-align:left;padding:.6rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--cream);font-weight:600;color:var(--navy-800)}
+
+footer.foot{
+  border-top:1px solid var(--line);background:var(--cream);
+  padding:1.6rem 1.25rem;color:var(--ink-soft);font-size:.9rem;
+}
+footer.foot .inner{max-width:var(--maxw);margin:0 auto;display:flex;
+  justify-content:space-between;gap:1rem;flex-wrap:wrap}
+footer.foot a{color:var(--teal-700)}
+
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+
+@media (max-width:600px){
+  body{font-size:16px}
+  h1{font-size:1.7rem}
+  main{padding:2rem 1.1rem 3rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}

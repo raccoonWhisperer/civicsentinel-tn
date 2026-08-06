@@ -145,19 +145,65 @@ create policy sources_public_read on public.issue_sources
 -- All inserts/updates go through serverless functions using the service role,
 -- which bypasses RLS. We deliberately create NO insert/update/delete policies here.
 
--- IMPORTANT: the anon SELECT on issues would expose reporter_contact/name.
--- We protect those by exposing a PUBLIC VIEW that omits private columns and
--- pointing the frontend at the view instead of the base table.
-create or replace view public.issues_public as
+-- ---------------------------------------------------------------------
+-- PRIVACY LOCKDOWN — reporter contact details must never be publicly readable.
+--
+-- Supabase grants SELECT on new public-schema tables to `anon` and
+-- `authenticated` by DEFAULT. Combined with the issues_public_read policy
+-- above, that would let anyone with the public key call
+--   GET /rest/v1/issues?select=reporter_contact,reporter_name
+-- and harvest the email/phone of every resident who filed a report.
+--
+-- A view that omits those columns is a CONVENTION, not a CONTROL — the base
+-- table stays reachable through PostgREST. So we revoke blanket access and
+-- re-grant COLUMN-LEVEL select on the safe columns only. Now even a direct
+-- query against the base table cannot return the private fields.
+-- ---------------------------------------------------------------------
+revoke all on public.issues        from anon, authenticated;
+revoke all on public.issue_events  from anon, authenticated;
+revoke all on public.issue_sources from anon, authenticated;
+revoke all on public.subscribers     from anon, authenticated;
+revoke all on public.admins          from anon, authenticated;
+revoke all on public.submission_rate from anon, authenticated;
+
+-- Safe columns only. reporter_contact + reporter_name are deliberately absent,
+-- so a direct query for them fails with "permission denied for column" rather
+-- than returning data.
+--
+-- `moderation` IS included, and must be: the issues_public view below runs
+-- with security_invoker = on, so its `where moderation = 'published'` clause is
+-- evaluated as the CALLER. Postgres requires column-level SELECT on every
+-- column a query reads — including ones referenced only in a WHERE clause — so
+-- omitting it here would break the view with "permission denied for column
+-- moderation". It carries no private data; only published rows are visible
+-- through RLS regardless.
+grant select (id, category, title, description, lat, lng, address, photo_url,
+              stage, moderation, assigned_to, resolution_summary,
+              created_at, resolved_at, published_at)
+  on public.issues to anon, authenticated;
+
+-- Read-only, and only for rows the RLS policies above allow.
+grant select on public.issue_events  to anon, authenticated;
+grant select on public.issue_sources to anon, authenticated;
+
+-- Convenience view the front end actually queries. security_invoker = on makes
+-- it run with the CALLER's privileges, so the column grants and RLS policies
+-- above still apply when reading through it (and it avoids the Supabase
+-- "security definer view" advisor warning).
+create or replace view public.issues_public
+  with (security_invoker = on) as
   select id, category, title, description, lat, lng, address, photo_url,
          stage, assigned_to, resolution_summary, created_at, resolved_at, published_at
   from public.issues
   where moderation = 'published';
 
--- Expose the view through PostgREST with anon read.
 grant select on public.issues_public to anon, authenticated;
-grant select on public.issue_events  to anon, authenticated;
-grant select on public.issue_sources to anon, authenticated;
+
+-- Sanity check — this must return ZERO rows. If it returns anything, a private
+-- column is still reachable by the public role and you must not go live.
+--   select column_name from information_schema.column_privileges
+--    where grantee in ('anon','authenticated') and table_name = 'issues'
+--      and column_name in ('reporter_contact','reporter_name');
 
 -- Helper: is the current JWT an allow-listed admin?
 create or replace function public.is_admin() returns boolean

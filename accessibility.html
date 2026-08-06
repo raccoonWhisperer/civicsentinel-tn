@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Accessibility statement — Civic Sentinel</title>
+<meta name="description" content="Civic Sentinel's accessibility commitments, the parts of the site we know fall short, and how to reach us if something blocks you." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="mast">
+  <div class="inner">
+    <a class="brand" href="/">Civic Sentinel<span class="sub"> · Rutherford County, TN</span></a>
+    <a class="back" href="/">← Back to the public record</a>
+  </div>
+</header>
+
+<main id="main">
+  <h1>Accessibility statement</h1>
+  <p class="updated">Last updated 6 August 2026</p>
+
+  <div class="tldr">
+    <h2>The short version</h2>
+    <p>A public record that some residents cannot read is not a public record. We build to <strong>WCAG 2.1 Level AA</strong>. We have not had the site independently audited, and the interactive map is the part most likely to fail you. If anything here blocks you from filing or reading an issue, tell us and we will take your report another way.</p>
+  </div>
+
+  <h2>What we have done</h2>
+  <ul>
+    <li><strong>Keyboard access.</strong> Every control can be reached and operated without a mouse. Dialogs trap focus while open and return it when closed.</li>
+    <li><strong>Visible focus.</strong> A high-contrast outline follows the keyboard, and it is never suppressed.</li>
+    <li><strong>Colour contrast.</strong> Text and interface colours are chosen to meet AA contrast. Issue status is never signalled by colour alone — each badge carries a text label.</li>
+    <li><strong>Skip link.</strong> A "skip to main content" link is the first thing a keyboard or screen-reader user meets.</li>
+    <li><strong>Structure.</strong> Real landmarks and a sensible heading order, so a screen reader can navigate by region and heading.</li>
+    <li><strong>Reduced motion.</strong> The rotating hero and counter animations stop for anyone whose system requests reduced motion.</li>
+    <li><strong>Text scaling.</strong> The layout reflows to 200% zoom without loss of content, and works down to a 320px viewport.</li>
+    <li><strong>Two languages.</strong> The interface is available in English and Spanish.</li>
+  </ul>
+
+  <h2>Where we currently fall short</h2>
+  <p>We would rather name these than let you discover them.</p>
+  <ul>
+    <li><strong>The map.</strong> An interactive map is inherently difficult to use without sight or a pointer. The public issue log carries the same information in a filterable text list, and it is the accessible path — but the map is not an equivalent experience, and we do not claim it is.</li>
+    <li><strong>Photographs.</strong> Photos submitted with reports have no alternative text, because the person filing is not asked to describe the image. We are working out how to collect a description without making the form harder to complete.</li>
+    <li><strong>Spanish coverage.</strong> The interface is translated. Issue reports themselves appear in whatever language they were written in, and are not machine-translated.</li>
+    <li><strong>No independent audit.</strong> Our conformance claim rests on our own testing. It has not been verified by a third party or by an assistive-technology user panel.</li>
+    <li><strong>Third-party components.</strong> The map library and the Cloudflare Turnstile check are outside our control; their accessibility is theirs, not ours, though we chose them partly on that basis.</li>
+  </ul>
+
+  <h2>Conformance status</h2>
+  <p>Civic Sentinel is <strong>partially conformant</strong> with WCAG 2.1 Level AA. "Partially conformant" means most of the site meets the standard, with the known exceptions listed above.</p>
+
+  <h2>If something blocks you</h2>
+  <p>Write to <a href="mailto:contact@civicsentinel-tn.com">contact@civicsentinel-tn.com</a>. Tell us the page, what you were trying to do, and what you use to browse if you are comfortable sharing it. We aim to reply within five working days.</p>
+  <p><strong>If the barrier is stopping you filing an issue, do not wait for a fix.</strong> Send us the report in the body of an email and we will enter it on the record for you, with the same tracking ID and the same public timeline as any other report. A technical failure on our side should never be the reason a concern goes unrecorded.</p>
+
+  <h2>How we test</h2>
+  <p>Keyboard-only walkthroughs of every flow, screen-reader checks with VoiceOver, automated contrast and structure checks, zoom to 200%, and narrow-viewport testing. This is honest effort, not a formal audit — see the limitation noted above.</p>
+</main>
+
+<footer class="foot">
+  <div class="inner">
+    <span>© <span id="year"></span> Civic Sentinel · Rutherford County, TN</span>
+    <span><a href="/privacy">Privacy</a> · <a href="/accessibility">Accessibility</a> · <a href="/terms">Terms</a></span>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

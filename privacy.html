@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Privacy — Civic Sentinel</title>
+<meta name="description" content="What Civic Sentinel collects when you file a report, what becomes public, what never does, and which third parties see your visit." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="legal.css" />
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="mast">
+  <div class="inner">
+    <a class="brand" href="/">Civic Sentinel<span class="sub"> · Rutherford County, TN</span></a>
+    <a class="back" href="/">← Back to the public record</a>
+  </div>
+</header>
+
+<main id="main">
+  <h1>Privacy</h1>
+  <p class="updated">Last updated 6 August 2026</p>
+
+  <div class="tldr">
+    <h2>The short version</h2>
+    <ul>
+      <li><strong>What you write in a report becomes public.</strong> The category, summary, description, map pin, address and any photo are published on the permanent record.</li>
+      <li><strong>Your name and contact details do not.</strong> They are stored so we can tell you when your issue moves, and they are excluded from the public record at the database level — not just hidden in the page.</li>
+      <li><strong>We never store your raw IP address.</strong> Only a salted one-way hash, used to stop one source flooding the log.</li>
+      <li><strong>We do not use advertising or analytics trackers.</strong> No Google Analytics, no ad pixels, no cross-site profiling.</li>
+      <li><strong>The record is append-only.</strong> Once an issue is published it is not edited away or deleted — including at your request. Please read the section on that before you file.</li>
+    </ul>
+  </div>
+
+  <h2>What we collect</h2>
+
+  <h3>When you file a report</h3>
+  <table>
+    <tr><th>Information</th><th>Public?</th><th>Why we have it</th></tr>
+    <tr><td>Category, summary, description</td><td><strong>Public</strong></td><td>This is the report. It is the point of the record.</td></tr>
+    <tr><td>Map pin (latitude/longitude) and address</td><td><strong>Public</strong></td><td>Location is what makes an issue verifiable and actionable.</td></tr>
+    <tr><td>Photo, if you attach one</td><td><strong>Public</strong></td><td>Helps reviewers triage. Stored in public file storage with a guessable URL derived from the tracking ID.</td></tr>
+    <tr><td>Your email or phone</td><td>Not public</td><td>So we can send you status changes. Optional.</td></tr>
+    <tr><td>Your name</td><td>Not public</td><td>Optional. You may file without it.</td></tr>
+    <tr><td>Salted hash of your IP address</td><td>Not public</td><td>Rate limiting only — caps reports from one source per ten minutes. The raw address is never written to the database.</td></tr>
+  </table>
+
+  <div class="callout">
+    <p><strong>Photographs carry information you may not intend to publish.</strong> A photo can show a house number, a licence plate, a face, or a window. We publish the image as submitted and we do not blur or redact it for you. Look at your photo before you attach it.</p>
+  </div>
+
+  <h3>When you subscribe to updates or meeting reminders</h3>
+  <p>We store your email address and which list you asked for. Nothing else. It is never published, never sold, and never shared with a campaign, a candidate, or any third party. You can ask us to remove it at any time.</p>
+
+  <h3>When you simply read the site</h3>
+  <p>We do not set analytics cookies and we do not run advertising or social tracking pixels. We do not build a profile of you. Your browser does, however, contact the third parties listed below in order to render the page.</p>
+
+  <h2>Third parties that can see your visit</h2>
+  <p>Being straight about this matters more than sounding reassuring. Loading this site causes your browser to make requests to these services, and each one can see your IP address:</p>
+  <table>
+    <tr><th>Service</th><th>What it does here</th></tr>
+    <tr><td>Vercel</td><td>Hosts the site and runs the report/subscribe functions.</td></tr>
+    <tr><td>Supabase</td><td>Stores the issue database and photo files. Your browser reads published issues directly from it.</td></tr>
+    <tr><td>Google Fonts</td><td>Serves the two typefaces the site uses.</td></tr>
+    <tr><td>OpenStreetMap</td><td>Serves the map tiles, and handles the map's address search when you use it. Your search text is sent to OpenStreetMap.</td></tr>
+    <tr><td>Esri / ArcGIS</td><td>Serves the county's official commissioner and school-board district boundaries, which the map loads live when you open it.</td></tr>
+    <tr><td>Cloudflare Turnstile</td><td>The "confirm you're human" check on the report form. Loads only when the report dialog is used.</td></tr>
+  </table>
+  <p>The share buttons for Facebook, X, WhatsApp and Nextdoor are ordinary links. They contact those companies only if you click one.</p>
+
+  <h2>The record is permanent — please read this before you file</h2>
+  <p>Civic Sentinel exists because a record that can be quietly edited is not a record. Every issue carries an append-only timeline, and the database physically refuses updates and deletions to that timeline. Its integrity is the whole product.</p>
+  <p>The practical consequence for you:</p>
+  <ul>
+    <li>A published report is not taken down because you later regret filing it.</li>
+    <li>Corrections are made by <em>adding</em> an entry to the timeline, not by rewriting what is already there.</li>
+    <li>Reports are reviewed by a moderator before publication, so nothing appears instantly — but once it appears, treat it as permanent.</li>
+  </ul>
+  <p>We will remove content that is unlawful, that endangers someone, or that exposes personal information about a third party who did not consent. Write to us and explain; we would rather fix a genuine harm than defend a policy.</p>
+  <p>Your own contact details are a separate matter — those are private, and you can have them erased at any time without touching the public record.</p>
+
+  <h2>Who can see the private fields</h2>
+  <p>Reporter names and contact details are readable only by the site's operators, through an authenticated console. The public interface has no permission to read those columns at all: the database rejects the request rather than relying on the page not to display them. Photos are the exception — they live in public storage and anyone with the URL can view them.</p>
+
+  <h2>How long we keep things</h2>
+  <ul>
+    <li><strong>Published issues and their timelines:</strong> indefinitely. That is the point.</li>
+    <li><strong>Reporter contact details:</strong> kept while the issue is open so we can update you, and erased on request.</li>
+    <li><strong>Subscriber emails:</strong> until you unsubscribe.</li>
+    <li><strong>Rate-limit hashes:</strong> short-lived operational data, pruned periodically.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>This site is meant for adults participating in local civic matters. It is not directed at children, and we ask that people under 13 not submit contact information.</p>
+
+  <h2>Your requests</h2>
+  <p>Write to <a href="mailto:contact@civicsentinel-tn.com">contact@civicsentinel-tn.com</a> to see what we hold about you, correct it, erase your contact details, or unsubscribe. Please include your tracking ID if your request concerns a report.</p>
+
+  <h2>Changes to this page</h2>
+  <p>If we change how the site handles information, we update this page and change the date at the top.</p>
+
+  <div class="callout">
+    <p>Civic Sentinel is an independent community project, not a government agency and not a law firm. This page describes our actual practice in plain language; it is not legal advice.</p>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="inner">
+    <span>© <span id="year"></span> Civic Sentinel · Rutherford County, TN</span>
+    <span><a href="/privacy">Privacy</a> · <a href="/accessibility">Accessibility</a> · <a href="/terms">Terms</a></span>
+  </div>
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

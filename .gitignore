@@ -1,0 +1,11 @@
+node_modules/
+.vercel/
+.env
+.env.local
+.DS_Store
+*.log
+.vercel
+.env*
+
+# local build scratch — zips and a superseded build, kept on disk, not in history
+_cleanup/
