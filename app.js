@@ -157,7 +157,14 @@ async function sb(path){
   const r = await fetch(`${CFG.SUPABASE_URL}/rest/v1/${path}`, {
     headers: { apikey: CFG.SUPABASE_ANON_KEY, Authorization: `Bearer ${CFG.SUPABASE_ANON_KEY}` }
   });
-  if(!r.ok) throw new Error('supabase rest '+r.status);
+  if(!r.ok){
+    // Surface PostgREST's own message (e.g. "permission denied for table issues",
+    // code 42501) so a grant/RLS regression is diagnosable from the console
+    // instead of an opaque "supabase rest 401".
+    let detail = '';
+    try { const j = await r.json(); detail = j.message ? ` — ${j.message}${j.code ? ' ['+j.code+']' : ''}` : ''; } catch(e){}
+    throw new Error(`supabase rest ${r.status} on ${path.split('?')[0]}${detail}`);
+  }
   return r.json();
 }
 async function postJSON(url, body){
@@ -184,23 +191,99 @@ function mapIssue(row, events, sources){
 }
 function readFileDataUrl(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
 
+/* -------------------------------------------------------------------------
+   RECORD-STATE HANDLING (added 2026-09-14).
+   The page used to load issues, events and sources with one Promise.all and
+   let any rejection escape. One side-table failure (in practice: a lost anon
+   GRANT on public.issues, which makes the RLS sub-select on issue_events and
+   issue_sources fail with 42501) then killed the whole list, and the page
+   rendered "0 issues logged" next to an empty log — asserting "nothing has
+   ever been reported" when the truth was "cannot read part of the record".
+   Now:
+     * issues_public is REQUIRED; events/sources are OPTIONAL. If a side table
+       fails, the issues still render, timelines/sources are simply absent,
+       and a banner says the record is PARTIAL.
+     * If issues_public itself fails, the counters show "—" (never a
+       fabricated zero) and the banner says the record is UNAVAILABLE.
+     * One fetch per page load (cached) instead of four.
+   ------------------------------------------------------------------------- */
+let RECORD_STATE = 'ok';   // 'ok' | 'partial' | 'down'
+function announceRecordState(state, detail){
+  if (state === 'ok') return;
+  const id = 'record-state';
+  const es = (typeof currentLang !== 'undefined' && currentLang === 'es');
+  const msg = state === 'down'
+    ? (es ? 'El registro público no está disponible en este momento. Los conteos y la lista de casos se ocultan hasta que vuelva la conexión, en lugar de mostrarse como cero.'
+          : 'The public record is temporarily unavailable. Counts and the issue log are hidden until the connection is back, rather than shown as zero.')
+    : (es ? 'El registro se muestra de forma parcial: los casos están disponibles, pero las líneas de tiempo y los documentos fuente no se pudieron cargar.'
+          : 'The record is showing partially: issues are available, but timelines and source documents could not be loaded.');
+  let bar = document.getElementById(id);
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = id;
+    bar.setAttribute('role', 'status');
+    bar.style.cssText = 'padding:.85rem 1rem;background:#fef3c7;color:#7c2d12;'
+      + 'border-bottom:1px solid #f59e0b;font-size:.95rem;text-align:center;line-height:1.45';
+    const main = document.getElementById('main');
+    if (main && main.parentNode) main.parentNode.insertBefore(bar, main);
+  }
+  bar.textContent = msg;
+  if (detail) bar.title = detail;
+}
+
 if (LIVE) {
+  let _cache = null, _inflight = null;
   API.list = async function(){
-    const [issues, events, sources] = await Promise.all([
+    if (_cache) return _cache;
+    // Several renderers call list() at once on first paint; share one fetch.
+    if (_inflight) return _inflight;
+    _inflight = (async () => { try { return await _load(); } finally { _inflight = null; } })();
+    return _inflight;
+  };
+  async function _load(){
+    const [issuesR, eventsR, sourcesR] = await Promise.allSettled([
       sb('issues_public?select=*&order=created_at.desc'),
       sb('issue_events?select=*&order=ts.asc'),
       sb('issue_sources?select=*')
     ]);
-    return issues.map(row => mapIssue(row, events, sources));
-  };
+    if (issuesR.status !== 'fulfilled') {
+      console.error('[civic-sentinel] public record unreachable:', issuesR.reason);
+      RECORD_STATE = 'down';
+      announceRecordState('down', String(issuesR.reason && issuesR.reason.message || issuesR.reason));
+      return [];            // NOT cached — a reload can recover
+    }
+    const failed = [eventsR, sourcesR].filter(r => r.status !== 'fulfilled');
+    if (failed.length) {
+      failed.forEach(r => console.error('[civic-sentinel] side table unreachable:', r.reason));
+      RECORD_STATE = 'partial';
+      announceRecordState('partial', failed.map(r => String(r.reason && r.reason.message || r.reason)).join(' | '));
+    }
+    const events  = eventsR.status  === 'fulfilled' ? eventsR.value  : [];
+    const sources = sourcesR.status === 'fulfilled' ? sourcesR.value : [];
+    _cache = issuesR.value.map(row => mapIssue(row, events, sources));
+    return _cache;
+  }
   API.get = async function(id){
-    const rows = await sb(`issues_public?id=eq.${encodeURIComponent(id)}&select=*`);
+    let rows;
+    try {
+      rows = await sb(`issues_public?id=eq.${encodeURIComponent(id)}&select=*`);
+    } catch (err) {
+      console.error('[civic-sentinel] lookup failed:', err);
+      RECORD_STATE = 'down'; announceRecordState('down', String(err && err.message || err));
+      return null;
+    }
     if(!rows[0]) return null;
-    const [events, sources] = await Promise.all([
+    const [eventsR, sourcesR] = await Promise.allSettled([
       sb(`issue_events?issue_id=eq.${encodeURIComponent(id)}&select=*&order=ts.asc`),
       sb(`issue_sources?issue_id=eq.${encodeURIComponent(id)}&select=*`)
     ]);
-    return mapIssue(rows[0], events, sources);
+    if (eventsR.status !== 'fulfilled' || sourcesR.status !== 'fulfilled') {
+      RECORD_STATE = RECORD_STATE === 'down' ? 'down' : 'partial';
+      announceRecordState('partial');
+    }
+    return mapIssue(rows[0],
+      eventsR.status  === 'fulfilled' ? eventsR.value  : [],
+      sourcesR.status === 'fulfilled' ? sourcesR.value : []);
   };
   API.create = async function(input){
     let token = '';
@@ -407,6 +490,12 @@ function syncCatFilter(items, keep){
 
 async function renderCounters(){
   const m = await API.metrics();
+  // If the record is unreachable we must NOT animate to 0 — that asserts
+  // "nothing reported" when the truth is "cannot reach the record".
+  if (typeof RECORD_STATE !== 'undefined' && RECORD_STATE === 'down') {
+    ["#c-logged","#c-ack","#c-resolved","#c-median"].forEach(sel=>{ const el=$(sel); if(el) el.textContent="—"; });
+    return;
+  }
   animateTo("#c-logged", m.logged); animateTo("#c-ack", m.ack);
   animateTo("#c-resolved", m.resolved); animateTo("#c-median", m.median);
 }
@@ -676,7 +765,14 @@ const HERO = {
 };
 let heroIdx = 0;
 function applyHeroLang(){ const h=HERO[currentLang][heroIdx]; $('[data-hero="eyebrow"]').textContent=h.eyebrow; $('[data-hero="title"]').textContent=h.title; $('[data-hero="tag"]').textContent=h.tag; }
-async function renderHeroStats(){ const m=await API.metrics(); animateTo("#h-logged", m.logged); animateTo("#h-resolved", m.resolved); }
+async function renderHeroStats(){
+  const m=await API.metrics();
+  if (typeof RECORD_STATE !== 'undefined' && RECORD_STATE === 'down') {
+    ["#h-logged","#h-resolved"].forEach(sel=>{ const el=$(sel); if(el) el.textContent="—"; });
+    return;
+  }
+  animateTo("#h-logged", m.logged); animateTo("#h-resolved", m.resolved);
+}
 
 /* =========================================================================
    Populate selects
